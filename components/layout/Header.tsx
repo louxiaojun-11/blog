@@ -10,8 +10,8 @@ export default function Header() {
       <div className="container mx-auto h-16 flex items-center justify-between px-4">
         <div className="flex items-center gap-8">
           <Image 
-            src="/weibo-logo.svg" 
-            alt="Weibo" 
+            src="/next.svg" 
+            alt="Logo" 
             width={100} 
             height={30}
             className="dark:invert"
