@@ -63,4 +63,19 @@ export interface TrendingTopic {
   id: number;
   title: string;
   views: string;
+}
+
+export interface BlogPost {
+  id: number;
+  title: string;
+  content: string;
+  author: {
+    id: number;
+    username: string;
+    avatar: string;
+  };
+  createdAt: string;
+  views: number;
+  likes: number;
+  comments: number;
 } 

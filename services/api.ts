@@ -6,7 +6,8 @@ import {
   FriendRequest, 
   Group, 
   NewsItem, 
-  TrendingTopic 
+  TrendingTopic, 
+  BlogPost 
 } from '@/types/api';
 
 const api = axios.create({
@@ -157,5 +158,17 @@ export const newsService = {
   getTrendingTopics: async () => {
     const response = await api.get<ApiResponse<TrendingTopic[]>>('/news/trending');
     return response.data;
+  }
+};
+
+export const blogService = {
+  getUserBlogs: async () => {
+    try {
+      const response = await api.get<ApiResponse<BlogPost[]>>('/user/bloglist');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user blogs:', error);
+      throw error;
+    }
   }
 }; 
