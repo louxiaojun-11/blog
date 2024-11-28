@@ -170,5 +170,19 @@ export const blogService = {
       console.error('Error fetching user blogs:', error);
       throw error;
     }
+  },
+
+  createBlog: async (blogData: {
+    title: string;
+    content: string;
+    user_id: number;
+  }) => {
+    try {
+      const response = await api.post<ApiResponse<BlogPost>>('/blog', blogData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating blog:', error);
+      throw error;
+    }
   }
 }; 

@@ -1,6 +1,6 @@
 'use client'
 
-import { Home, Users, UserPlus, Layout, Newspaper, FileText } from 'lucide-react'
+import { Home, Users, UserPlus, Layout, Newspaper, FileText, PenSquare } from 'lucide-react'
 import Link from 'next/link'
 
 export default function LeftSidebar() {
@@ -11,6 +11,7 @@ export default function LeftSidebar() {
     { icon: Layout, label: '小组', href: '/groups' },
     { icon: Newspaper, label: '资讯', href: '/news' },
     { icon: FileText, label: '我的博文', href: '/blog' },
+    { icon: PenSquare, label: '写博文', href: '/blog/write' },
   ]
 
   return (
