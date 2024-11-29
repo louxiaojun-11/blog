@@ -26,12 +26,15 @@ export default function LoginPage() {
       if (response.success) {
         console.log('Login successful, data:', response.data)
         const { data } = response
+        console.log('Login response data:', data);
+        
         const userData = {
           id: data.id,
           account: data.account,
-          userName: data.userName
+          username: data.username,
+          avatar: data.avatar
         }
-        console.log('Processed user data:', userData)
+        console.log('Stored user data:', userData);
         login(userData, data.token)
         console.log('Login context updated, redirecting...')
         router.push('/')

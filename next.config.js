@@ -7,8 +7,13 @@ const nextConfig = {
         hostname: 'picsum.photos',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'louxiaojun1.oss-cn-hangzhou.aliyuncs.com',
+        pathname: '/**',
+      }
     ],
-  },
+  }
 }
 
 module.exports = nextConfig 

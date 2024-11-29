@@ -11,7 +11,7 @@ export default function Header() {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
   // 点击页面其他地方时关闭下拉菜单
   useEffect(() => {
@@ -71,8 +71,8 @@ export default function Header() {
               className="hover:text-[#FF8200] rounded-full overflow-hidden"
             >
               <Image
-                src="https://picsum.photos/32/32"
-                alt="User Avatar"
+                src={user?.avatar || `https://picsum.photos/32/32?random=1`}
+                alt={user?.username || 'User Avatar'}
                 width={32}
                 height={32}
                 className="rounded-full"
