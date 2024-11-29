@@ -9,10 +9,60 @@ import {
   TrendingTopic, 
   BlogPost 
 } from '@/types/api';
+import Cookies from 'js-cookie';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'
 });
+
+// 请求拦截器
+api.interceptors.request.use(
+  (config) => {
+    // 获取 token
+    const token = sessionStorage.getItem('token');
+    
+    // 确保 config.headers 存在
+    if (!config.headers) {
+      config.headers = {};
+    }
+
+    // 如果有 token，添加到请求头，使用 'token' 作为头名称
+    if (token) {
+      config.headers.token = token;
+    }
+
+    // 确保设置了正确的 Content-Type
+    if (!config.headers['Content-Type'] && !config.headers.get('Content-Type')) {
+      config.headers['Content-Type'] = 'application/json';
+    }
+
+    console.log('Request with headers:', config.headers); // 调试日志
+    return config;
+  },
+  (error) => {
+    console.error('Request interceptor error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// 响应拦截器
+api.interceptors.response.use(
+  (response) => {
+    console.log('Response:', response); // 调试日志
+    return response;
+  },
+  (error) => {
+    console.error('Response error:', error);
+    if (error.response?.status === 401) {
+      // token 失效，清除所有登录状态
+      sessionStorage.removeItem('user');
+      sessionStorage.removeItem('token');
+      Cookies.remove('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 // 在 postService 中添加模拟数据
 const mockPosts: Post[] = [
@@ -182,6 +232,21 @@ export const blogService = {
       return response.data;
     } catch (error) {
       console.error('Error creating blog:', error);
+      throw error;
+    }
+  }
+};
+
+// 添加登录服务
+export const authService = {
+  login: async (account: string, password: string) => {
+    console.log('Sending login request with:', { account, password });
+    try {
+      const response = await api.post('/user/login', { account, password });
+      console.log('Raw response:', response);
+      return response.data;
+    } catch (error) {
+      console.error('Login request error:', error);
       throw error;
     }
   }
