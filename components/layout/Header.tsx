@@ -36,7 +36,7 @@ export default function Header() {
 
   return (
     <header className="fixed top-0 w-full bg-white shadow-sm z-50">
-      <div className="container mx-auto h-16 flex items-center justify-between px-4">
+      <div className="container max-w-7xl mx-auto h-16 flex items-center justify-between px-4">
         <div className="flex items-center gap-8">
           <Image 
             src="/next.svg" 

@@ -6,7 +6,7 @@ import FollowSuggestions from '@/components/features/following/FollowSuggestions
 export default function FollowingPage() {
   return (
     <MainLayout>
-      <div className="flex gap-4 pt-4">
+      <div className="flex gap-4 pt-4 px-4">
         <div className="flex-1 min-w-0">
           <FilterBar />
           <FollowFeed />

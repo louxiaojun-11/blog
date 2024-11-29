@@ -5,7 +5,7 @@ import RightSidebar from "@/components/layout/RightSidebar"
 export default function Home() {
   return (
     <MainLayout>
-      <div className="flex gap-4">
+      <div className="flex gap-4 pt-4 px-4">
         <Feed />
         <RightSidebar />
       </div>
