@@ -234,6 +234,16 @@ export const blogService = {
       console.error('Error creating blog:', error);
       throw error;
     }
+  },
+
+  deleteBlog: async (blogId: number) => {
+    try {
+      const response = await api.delete<ApiResponse<boolean>>(`/blog?id=${blogId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting blog:', error);
+      throw error;
+    }
   }
 };
 

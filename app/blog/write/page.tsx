@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { blogService } from '@/services/api'
+import MainLayout from '@/app/layouts/MainLayout'
 
 export default function WriteBlogPage() {
   const router = useRouter()
@@ -39,8 +40,8 @@ export default function WriteBlogPage() {
   }
 
   return (
-    <div className="container mx-auto pt-20 px-4">
-      <div className="max-w-3xl mx-auto">
+    <MainLayout>
+      <div className="pt-4 px-4">
         <div className="bg-white rounded-lg shadow p-6">
           <h1 className="text-2xl font-bold mb-6">写博文</h1>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -81,6 +82,6 @@ export default function WriteBlogPage() {
           </form>
         </div>
       </div>
-    </div>
+    </MainLayout>
   )
 } 
