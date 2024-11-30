@@ -319,5 +319,17 @@ export const userService = {
       console.error('Error updating user info:', error);
       throw error;
     }
+  },
+
+  // 修改获取用户密码的方法中的请求路径
+  getUserPassword: async (userId: number) => {
+    try {
+      const response = await api.get<ApiResponse<string>>(`/user/password?userId=${userId}`);
+      // 直接返回 response.data，因为密码就是 data 字段的值
+      return response.data;
+    } catch (error) {
+      console.error('Error getting user password:', error);
+      throw error;
+    }
   }
 }; 

@@ -27,6 +27,8 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
     confirm: false
   })
 
+  const [originalPassword, setOriginalPassword] = useState<string | null>(null);
+
   useEffect(() => {
     if (showEditModal && user) {
       setFormData(prev => ({
@@ -38,6 +40,23 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
       }))
     }
   }, [showEditModal, user])
+
+  useEffect(() => {
+    const fetchOriginalPassword = async () => {
+      if (showEditModal && user?.userId) {
+        try {
+          const response = await userService.getUserPassword(user.userId);
+          if (response.success) {
+            setOriginalPassword(response.data);
+          }
+        } catch (error) {
+          console.error('Failed to get original password:', error);
+        }
+      }
+    };
+
+    fetchOriginalPassword();
+  }, [showEditModal, user?.userId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -71,7 +90,7 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
     }
 
     try {
-      // 准备更新数据 - 只包含必需的userId
+      // 准备更新数据
       const updateData: {
         userId: number;
         username?: string;
@@ -79,12 +98,27 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
         password?: string;
         oldPassword?: string;
       } = {
-        userId: user.userId  // userId 是必需的
+        userId: user.userId
       }
 
-      // 只有当用户名被修改时才添加
+      // 只有当用户名被修改时才添���
       if (formData.username && formData.username !== user.username) {
         updateData.username = formData.username
+      }
+
+      // 处理密码更新
+      if (formData.oldPassword && formData.newPassword && formData.confirmPassword) {
+        // 验证原密码
+        if (formData.oldPassword !== originalPassword) {
+          alert('原密码不正确')
+          return
+        }
+        // 验证新密码一致性
+        if (formData.newPassword !== formData.confirmPassword) {
+          alert('两次输入的新密码不一致')
+          return
+        }
+        updateData.password = formData.newPassword
       }
 
       // 处理头像上传
@@ -95,28 +129,16 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
         }
       }
 
-      // 只有当用户填写了密码相关字段时才处理密码更新
-      if (formData.oldPassword && formData.newPassword && formData.confirmPassword) {
-        if (formData.newPassword !== formData.confirmPassword) {
-          alert('两次输入的新密码不一致')
-          return
-        }
-        updateData.password = formData.newPassword
-        updateData.oldPassword = formData.oldPassword
-      }
-
       // 如果没有任何修改，直接返回
-      if (Object.keys(updateData).length === 1) {  // 只有 userId
+      if (Object.keys(updateData).length === 1) {
         alert('没有任何修改')
         return
       }
 
       // 发送更新请求
       const response = await userService.updateUserInfo(updateData)
-      console.log('Update response:', response); // 添加调试日志
       
       if (response && response.success) {
-        // 更新本地用户信息 - 只更新修改过的字段
         const updatedUser = {
           ...user,
           ...(updateData.username && { username: updateData.username }),
