@@ -9,7 +9,7 @@ import { X, Eye, EyeOff, Upload } from 'lucide-react'
 import { uploadService, userService } from '@/services/api'
 
 export default function Page() {  // 注意：这里使用 Page 作为组件名
-  const { user, login } = useAuth()
+  const { user, token, login } = useAuth()
   const [showEditModal, setShowEditModal] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
@@ -65,7 +65,7 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!user?.userId) {
+    if (!user?.userId || !token) {
       alert('请先登录')
       return
     }
@@ -113,20 +113,21 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
 
       // 发送更新请求
       const response = await userService.updateUserInfo(updateData)
+      console.log('Update response:', response); // 添加调试日志
       
-      if (response.success) {
+      if (response && response.success) {
         // 更新本地用户信息 - 只更新修改过的字段
         const updatedUser = {
           ...user,
           ...(updateData.username && { username: updateData.username }),
           ...(updateData.avatar && { avatar: updateData.avatar })
         }
-        login(updatedUser, token!)
+        login(updatedUser, token)
         
         alert('修改成功！')
         setShowEditModal(false)
       } else {
-        alert(response.message || '修改失败')
+        alert(response?.message || '修改失败')
       }
     } catch (error) {
       console.error('Failed to update user info:', error)

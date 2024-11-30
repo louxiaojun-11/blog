@@ -310,7 +310,11 @@ export const userService = {
   }) => {
     try {
       const response = await api.put<ApiResponse<any>>('/user', userData);
+      console.log('Update user response:', response); // 添加调试日志
+      
+      // 直接返回 response.data，不再做额外判断
       return response.data;
+      
     } catch (error) {
       console.error('Error updating user info:', error);
       throw error;
