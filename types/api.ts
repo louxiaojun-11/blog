@@ -4,7 +4,7 @@ export interface Post {
   content: string;
   images?: string[];
   author: {
-    id: number;
+    userId: number;
     username: string;
     avatar: string;
   };
@@ -22,7 +22,7 @@ export interface ApiResponse<T> {
 
 // 新增接口定义
 export interface Friend {
-  id: number;
+  userId: number;
   username: string;
   avatar: string;
   status: 'online' | 'offline';
@@ -32,7 +32,7 @@ export interface Friend {
 export interface FriendRequest {
   id: number;
   from: {
-    id: number;
+    userId: number;
     username: string;
     avatar: string;
   };
@@ -70,7 +70,7 @@ export interface BlogPost {
   title: string;
   content: string;
   author: {
-    id: number;
+    userId: number;
     username: string;
     avatar: string;
   };

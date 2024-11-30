@@ -4,9 +4,11 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { blogService } from '@/services/api'
 import MainLayout from '@/app/layouts/MainLayout'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function WriteBlogPage() {
   const router = useRouter()
+  const { user } = useAuth()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -19,17 +21,22 @@ export default function WriteBlogPage() {
       return
     }
 
+    if (!user?.userId) {
+      alert('请先登录')
+      return
+    }
+
     try {
       setIsSubmitting(true)
       const response = await blogService.createBlog({
         title,
         content,
-        user_id: 1  // 这里应该使用实际的用户ID
+        userId: user.userId
       })
 
       if (response.success) {
         alert('发布成功！')
-        router.push('/blog')  // 发布成功后跳转到博文列表
+        router.push('/blog')
       }
     } catch (error) {
       console.error('Failed to create blog:', error)

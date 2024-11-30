@@ -212,9 +212,11 @@ export const newsService = {
 };
 
 export const blogService = {
-  getUserBlogs: async () => {
+  getUserBlogs: async (userId?: number) => {
     try {
-      const response = await api.get<ApiResponse<BlogPost[]>>('/user/bloglist');
+      const response = await api.get<ApiResponse<BlogPost[]>>('/user/bloglist', {
+        params: { userId }
+      });
       return response.data;
     } catch (error) {
       console.error('Error fetching user blogs:', error);
@@ -225,7 +227,7 @@ export const blogService = {
   createBlog: async (blogData: {
     title: string;
     content: string;
-    user_id: number;
+    userId: number;
   }) => {
     try {
       const response = await api.post<ApiResponse<BlogPost>>('/blog', blogData);
@@ -254,9 +256,63 @@ export const authService = {
     try {
       const response = await api.post('/user/login', { account, password });
       console.log('Raw response:', response);
+      
+      // 确保返回的数据格式正确
+      if (response.data.success && response.data.data) {
+        const userData = {
+          userId: response.data.data.userId,
+          account: response.data.data.account,
+          username: response.data.data.username,
+          avatar: response.data.data.avatar
+        };
+        return {
+          success: true,
+          data: {
+            ...userData,
+            token: response.data.data.token
+          }
+        };
+      }
       return response.data;
     } catch (error) {
       console.error('Login request error:', error);
+      throw error;
+    }
+  }
+};
+
+export const uploadService = {
+  uploadFile: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const response = await api.post<ApiResponse<string>>('/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      throw error;
+    }
+  }
+};
+
+export const userService = {
+  updateUserInfo: async (userData: {
+    userId: number;
+    username?: string;
+    avatar?: string;
+    password?: string;
+    oldPassword?: string;
+  }) => {
+    try {
+      const response = await api.put<ApiResponse<any>>('/user', userData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating user info:', error);
       throw error;
     }
   }

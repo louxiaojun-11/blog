@@ -45,7 +45,7 @@ export default function FriendsList() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
         {friends.map((friend) => (
-          <div key={friend.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50">
+          <div key={friend.userId} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50">
             <Image
               src={friend.avatar}
               alt={friend.username}

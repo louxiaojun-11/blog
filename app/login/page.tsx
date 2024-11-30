@@ -29,7 +29,7 @@ export default function LoginPage() {
         console.log('Login response data:', data);
         
         const userData = {
-          id: data.id,
+          userId: data.userId,
           account: data.account,
           username: data.username,
           avatar: data.avatar

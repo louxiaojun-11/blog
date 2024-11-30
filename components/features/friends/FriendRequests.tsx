@@ -5,9 +5,9 @@ import { Check, X } from 'lucide-react'
 
 export default function FriendRequests() {
   const requests = [
-    { id: 1, name: '用户 1', mutualFriends: 3 },
-    { id: 2, name: '用户 2', mutualFriends: 5 },
-    { id: 3, name: '用户 3', mutualFriends: 2 },
+    { userId: 1, name: '用户 1', mutualFriends: 3 },
+    { userId: 2, name: '用户 2', mutualFriends: 5 },
+    { userId: 3, name: '用户 3', mutualFriends: 2 },
   ]
 
   return (
@@ -15,9 +15,9 @@ export default function FriendRequests() {
       <h2 className="font-bold mb-4">好友请求</h2>
       <div className="space-y-4">
         {requests.map((request) => (
-          <div key={request.id} className="flex gap-3">
+          <div key={request.userId} className="flex gap-3">
             <Image
-              src={`https://picsum.photos/48/48?random=${request.id}`}
+              src={`https://picsum.photos/48/48?random=${request.userId}`}
               alt={request.name}
               width={48}
               height={48}

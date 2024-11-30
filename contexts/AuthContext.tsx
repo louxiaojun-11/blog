@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import Cookies from 'js-cookie'
 
 interface User {
-  id: number
+  userId: number
   account: string
   username: string
   avatar: string

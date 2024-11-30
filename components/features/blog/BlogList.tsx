@@ -5,21 +5,25 @@ import Image from 'next/image'
 import { Eye, Heart, MessageCircle, Trash2 } from 'lucide-react'
 import { BlogPost } from '@/types/api'
 import { blogService } from '@/services/api'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function BlogList() {
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     loadBlogs();
-  }, []);
+  }, [user]);
 
   const loadBlogs = async () => {
+    if (!user?.userId) return;
+    
     try {
       setLoading(true);
-      const response = await blogService.getUserBlogs();
+      const response = await blogService.getUserBlogs(user.userId);
       if (response.success) {
         const sortedBlogs = [...response.data].sort((a, b) => {
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();

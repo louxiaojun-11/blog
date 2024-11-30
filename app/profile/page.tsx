@@ -6,9 +6,10 @@ import BlogList from '@/components/features/blog/BlogList'
 import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
 import { X, Eye, EyeOff, Upload } from 'lucide-react'
+import { uploadService, userService } from '@/services/api'
 
 export default function Page() {  // 注意：这里使用 Page 作为组件名
-  const { user } = useAuth()
+  const { user, login } = useAuth()
   const [showEditModal, setShowEditModal] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
@@ -41,6 +42,18 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      // 验证文件类型
+      if (!file.type.startsWith('image/')) {
+        alert('请上传图片文件')
+        return
+      }
+      
+      // 验证文件大小 (例如限制为2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        alert('图片大小不能超过2MB')
+        return
+      }
+
       const reader = new FileReader()
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string)
@@ -49,11 +62,76 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: 等待后端API完成后实现
-    console.log('Form submitted:', { ...formData, avatar: avatarPreview })
-    setShowEditModal(false)
+    
+    if (!user?.userId) {
+      alert('请先登录')
+      return
+    }
+
+    try {
+      // 准备更新数据 - 只包含必需的userId
+      const updateData: {
+        userId: number;
+        username?: string;
+        avatar?: string;
+        password?: string;
+        oldPassword?: string;
+      } = {
+        userId: user.userId  // userId 是必需的
+      }
+
+      // 只有当用户名被修改时才添加
+      if (formData.username && formData.username !== user.username) {
+        updateData.username = formData.username
+      }
+
+      // 处理头像上传
+      if (fileInputRef.current?.files?.[0]) {
+        const uploadResponse = await uploadService.uploadFile(fileInputRef.current.files[0])
+        if (uploadResponse.success) {
+          updateData.avatar = uploadResponse.data
+        }
+      }
+
+      // 只有当用户填写了密码相关字段时才处理密码更新
+      if (formData.oldPassword && formData.newPassword && formData.confirmPassword) {
+        if (formData.newPassword !== formData.confirmPassword) {
+          alert('两次输入的新密码不一致')
+          return
+        }
+        updateData.password = formData.newPassword
+        updateData.oldPassword = formData.oldPassword
+      }
+
+      // 如果没有任何修改，直接返回
+      if (Object.keys(updateData).length === 1) {  // 只有 userId
+        alert('没有任何修改')
+        return
+      }
+
+      // 发送更新请求
+      const response = await userService.updateUserInfo(updateData)
+      
+      if (response.success) {
+        // 更新本地用户信息 - 只更新修改过的字段
+        const updatedUser = {
+          ...user,
+          ...(updateData.username && { username: updateData.username }),
+          ...(updateData.avatar && { avatar: updateData.avatar })
+        }
+        login(updatedUser, token!)
+        
+        alert('修改成功！')
+        setShowEditModal(false)
+      } else {
+        alert(response.message || '修改失败')
+      }
+    } catch (error) {
+      console.error('Failed to update user info:', error)
+      alert('修改失败，请重试')
+    }
   }
 
   return (
