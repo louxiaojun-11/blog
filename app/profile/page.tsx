@@ -5,7 +5,7 @@ import MainLayout from '@/app/layouts/MainLayout'
 import BlogList from '@/components/features/blog/BlogList'
 import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
-import { X, Eye, EyeOff, Upload } from 'lucide-react'
+import { X, Eye, EyeOff, Upload, Pencil } from 'lucide-react'
 import { uploadService, userService } from '@/services/api'
 
 export default function Page() {  // 注意：这里使用 Page 作为组件名
@@ -13,7 +13,32 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
   const [showEditModal, setShowEditModal] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
-  
+  const [profile, setProfile] = useState<{
+    following: number;
+    follower: number;
+    introduce: string;
+  } | null>(null)
+  const [showIntroduceModal, setShowIntroduceModal] = useState(false)
+  const [newIntroduce, setNewIntroduce] = useState('')
+
+  // 获取用户资料
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user?.userId) {
+        try {
+          const response = await userService.getUserProfile(user.userId)
+          if (response.success) {
+            setProfile(response.data)
+          }
+        } catch (error) {
+          console.error('Failed to fetch user profile:', error)
+        }
+      }
+    }
+
+    fetchUserProfile()
+  }, [user?.userId])
+
   const [formData, setFormData] = useState({
     username: '',
     oldPassword: '',
@@ -101,7 +126,7 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
         userId: user.userId
       }
 
-      // 只有当用户名被修改时才添���
+      // 只有当用户名被修改时才添
       if (formData.username && formData.username !== user.username) {
         updateData.username = formData.username
       }
@@ -157,6 +182,28 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
     }
   }
 
+  const handleUpdateIntroduce = async () => {
+    if (!user?.userId) {
+      alert('请先登录')
+      return
+    }
+
+    try {
+      const response = await userService.updateUserIntroduce(user.userId, newIntroduce)
+      if (response.success) {
+        // 更新本地状态
+        setProfile(prev => prev ? { ...prev, introduce: newIntroduce } : null)
+        setShowIntroduceModal(false)
+        alert('修改成功！')
+      } else {
+        alert(response.message || '修改失败')
+      }
+    } catch (error) {
+      console.error('Failed to update introduce:', error)
+      alert('修改失败，请重试')
+    }
+  }
+
   return (
     <MainLayout>
       <div className="pt-4 px-4">
@@ -177,13 +224,24 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
                   <h1 className="text-2xl font-bold mb-2">{user?.username || '未登录用户'}</h1>
                   <div className="flex gap-4 mb-2">
                     <span className="text-gray-600">
-                      <strong>0</strong> 粉丝
+                      <strong>{profile?.follower || 0}</strong> 粉丝
                     </span>
                     <span className="text-gray-600">
-                      <strong>0</strong> 关注
+                      <strong>{profile?.following || 0}</strong> 关注
                     </span>
                   </div>
-                  <p className="text-gray-500">这个人很懒，还没有写简介...</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-gray-500">{profile?.introduce || '这个人很懒，还没有写简介...'}</p>
+                    <button
+                      onClick={() => {
+                        setNewIntroduce(profile?.introduce || '')
+                        setShowIntroduceModal(true)
+                      }}
+                      className="p-1 text-gray-400 hover:text-gray-600"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
                 <button
                   onClick={() => setShowEditModal(true)}
@@ -348,6 +406,39 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 修改简介模态框 */}
+      {showIntroduceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md relative">
+            <button
+              onClick={() => setShowIntroduceModal(false)}
+              className="absolute right-4 top-4 text-gray-500 hover:text-gray-700"
+            >
+              <X className="h-6 w-6" />
+            </button>
+            
+            <h2 className="text-xl font-bold mb-6">修改个人简介</h2>
+            
+            <div className="space-y-4">
+              <textarea
+                value={newIntroduce}
+                onChange={(e) => setNewIntroduce(e.target.value)}
+                className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF8200]"
+                placeholder="请输入个人简介"
+                rows={4}
+              />
+              
+              <button
+                onClick={handleUpdateIntroduce}
+                className="w-full py-2 bg-[#FF8200] text-white rounded-lg hover:bg-[#ff9933]"
+              >
+                确认修改
+              </button>
+            </div>
           </div>
         </div>
       )}

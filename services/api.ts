@@ -331,5 +331,32 @@ export const userService = {
       console.error('Error getting user password:', error);
       throw error;
     }
+  },
+
+  getUserProfile: async (userId: number) => {
+    try {
+      const response = await api.get<ApiResponse<{
+        following: number;
+        follower: number;
+        introduce: string;
+      }>>(`/user/profile/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      throw error;
+    }
+  },
+
+  updateUserIntroduce: async (userId: number, introduce: string) => {
+    try {
+      const response = await api.put<ApiResponse<any>>(`/user/profile/introduce`, {
+        userId,
+        introduce
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating user introduce:', error);
+      throw error;
+    }
   }
 }; 
