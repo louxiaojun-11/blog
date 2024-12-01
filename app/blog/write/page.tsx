@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { blogService } from '@/services/api'
 import MainLayout from '@/app/layouts/MainLayout'
 import { useAuth } from '@/contexts/AuthContext'
+import { Check } from 'lucide-react'
 
 export default function WriteBlogPage() {
   const router = useRouter()
@@ -12,6 +13,7 @@ export default function WriteBlogPage() {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,8 +37,11 @@ export default function WriteBlogPage() {
       })
 
       if (response.success) {
-        alert('发布成功！')
-        router.push('/blog')
+        setShowSuccess(true)
+        // 3秒后跳转到博文列表页
+        setTimeout(() => {
+          router.push('/blog')
+        }, 3000)
       }
     } catch (error) {
       console.error('Failed to create blog:', error)
@@ -49,6 +54,16 @@ export default function WriteBlogPage() {
   return (
     <MainLayout>
       <div className="pt-4 px-4">
+        {/* 成功提示组件 */}
+        {showSuccess && (
+          <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-50 border border-green-200 rounded-lg px-6 py-4 shadow-lg flex items-center gap-2 z-50">
+            <div className="bg-green-100 rounded-full p-1">
+              <Check className="w-4 h-4 text-green-600" />
+            </div>
+            <span className="text-green-800">发布成功！3秒后跳转到博文列表</span>
+          </div>
+        )}
+
         <div className="bg-white rounded-lg shadow p-6">
           <h1 className="text-2xl font-bold mb-6">写博文</h1>
           <form onSubmit={handleSubmit} className="space-y-4">

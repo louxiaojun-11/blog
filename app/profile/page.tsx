@@ -5,7 +5,7 @@ import MainLayout from '@/app/layouts/MainLayout'
 import BlogList from '@/components/features/blog/BlogList'
 import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
-import { X, Eye, EyeOff, Upload, Pencil } from 'lucide-react'
+import { X, Eye, EyeOff, Upload, Pencil, Check } from 'lucide-react'
 import { uploadService, userService } from '@/services/api'
 
 export default function Page() {  // 注意：这里使用 Page 作为组件名
@@ -20,6 +20,7 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
   } | null>(null)
   const [showIntroduceModal, setShowIntroduceModal] = useState(false)
   const [newIntroduce, setNewIntroduce] = useState('')
+  const [showSuccess, setShowSuccess] = useState(false)
 
   // 获取用户资料
   useEffect(() => {
@@ -126,7 +127,7 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
         userId: user.userId
       }
 
-      // 只有当用户名被修改时才添
+      // 只有当用户名被修改时才添加
       if (formData.username && formData.username !== user.username) {
         updateData.username = formData.username
       }
@@ -171,8 +172,11 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
         }
         login(updatedUser, token)
         
-        alert('修改成功！')
         setShowEditModal(false)
+        // 显示成功提示
+        setShowSuccess(true)
+        // 3秒后自动隐藏
+        setTimeout(() => setShowSuccess(false), 3000)
       } else {
         alert(response?.message || '修改失败')
       }
@@ -194,7 +198,10 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
         // 更新本地状态
         setProfile(prev => prev ? { ...prev, introduce: newIntroduce } : null)
         setShowIntroduceModal(false)
-        alert('修改成功！')
+        // 显示成功提示
+        setShowSuccess(true)
+        // 3秒后自动隐藏
+        setTimeout(() => setShowSuccess(false), 3000)
       } else {
         alert(response.message || '修改失败')
       }
@@ -207,6 +214,16 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
   return (
     <MainLayout>
       <div className="pt-4 px-4">
+        {/* 成功提示组件 */}
+        {showSuccess && (
+          <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-50 border border-green-200 rounded-lg px-6 py-4 shadow-lg flex items-center gap-2 z-50">
+            <div className="bg-green-100 rounded-full p-1">
+              <Check className="w-4 h-4 text-green-600" />
+            </div>
+            <span className="text-green-800">修改成功！</span>
+          </div>
+        )}
+
         {/* 个人信息卡片 */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex items-center gap-6">
