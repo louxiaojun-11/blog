@@ -121,7 +121,7 @@ export const postService = {
 export const friendService = {
   getFriends: async () => {
     try {
-      const response = await api.get<ApiResponse<Friend[]>>('/friends');
+      const response = await api.get<ApiResponse<Friend[]>>('/relation/friends');
       return response.data;
     } catch (error) {
       console.error('Error fetching friends:', error);
@@ -356,6 +356,34 @@ export const userService = {
       return response.data;
     } catch (error) {
       console.error('Error updating user introduce:', error);
+      throw error;
+    }
+  },
+
+  getFollowers: async (userId: number) => {
+    try {
+      const response = await api.get<ApiResponse<{
+        relationId: number;
+        username: string;
+        avatar: string;
+      }[]>>(`/relation/follower`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching followers:', error);
+      throw error;
+    }
+  },
+
+  getFollowing: async (userId: number) => {
+    try {
+      const response = await api.get<ApiResponse<{
+        relationId: number;
+        username: string;
+        avatar: string;
+      }[]>>(`/relation/following`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching following:', error);
       throw error;
     }
   }

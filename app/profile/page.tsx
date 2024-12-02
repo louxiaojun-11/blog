@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { useAuth } from '@/contexts/AuthContext'
 import { X, Eye, EyeOff, Upload, Pencil, Check } from 'lucide-react'
 import { uploadService, userService } from '@/services/api'
+import Link from 'next/link'
 
 export default function Page() {  // 注意：这里使用 Page 作为组件名
   const { user, token, login } = useAuth()
@@ -240,12 +241,16 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
                 <div>
                   <h1 className="text-2xl font-bold mb-2">{user?.username || '未登录用户'}</h1>
                   <div className="flex gap-4 mb-2">
-                    <span className="text-gray-600">
-                      <strong>{profile?.follower || 0}</strong> 粉丝
-                    </span>
-                    <span className="text-gray-600">
-                      <strong>{profile?.following || 0}</strong> 关注
-                    </span>
+                    <Link href="/profile/follow?tab=follower" className="text-gray-600 hover:text-[#FF8200]">
+                      <span>
+                        <strong>{profile?.follower || 0}</strong> 粉丝
+                      </span>
+                    </Link>
+                    <Link href="/profile/follow?tab=following" className="text-gray-600 hover:text-[#FF8200]">
+                      <span>
+                        <strong>{profile?.following || 0}</strong> 关注
+                      </span>
+                    </Link>
                   </div>
                   <div className="flex items-center gap-2">
                     <p className="text-gray-500">{profile?.introduce || '这个人很懒，还没有写简介...'}</p>
