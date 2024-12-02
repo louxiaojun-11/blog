@@ -279,7 +279,7 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
         {/* 博文列表 */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-bold mb-6">我的博文</h2>
-          <BlogList />
+          <BlogList isPersonal={true} />
         </div>
       </div>
 

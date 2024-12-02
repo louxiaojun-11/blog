@@ -386,5 +386,38 @@ export const userService = {
       console.error('Error fetching following:', error);
       throw error;
     }
+  },
+
+  getUserRelationProfile: async (userId: number) => {
+    try {
+      const response = await api.get<ApiResponse<{
+        relationId: number;
+        username: string;
+        avatar: string;
+        following: number;
+        follower: number;
+        introduce: string | null;
+        status: number;
+        blogList: {
+          id: number;
+          title: string;
+          content: string;
+          userID: number;
+          likes: number;
+          views: number;
+          comments: number;
+          createdAt: string;
+          author: {
+            id: number | null;
+            avatar: string;
+            username: string;
+          };
+        }[];
+      }>>(`/relation/profile?relationId=${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user relation profile:', error);
+      throw error;
+    }
   }
 }; 
