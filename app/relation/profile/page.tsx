@@ -6,6 +6,8 @@ import MainLayout from '@/app/layouts/MainLayout'
 import Image from 'next/image'
 import BlogList from '@/components/features/blog/BlogList'
 import { userService } from '@/services/api'
+import { Check } from 'lucide-react'
+import ConfirmDialog from '@/components/common/ConfirmDialog'
 
 interface UserProfile {
   relationId: number;
@@ -52,6 +54,9 @@ export default function UserProfilePage() {
   const relationId = searchParams.get('relationId')
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
+  const [showUnfollowConfirm, setShowUnfollowConfirm] = useState(false)
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -80,29 +85,48 @@ export default function UserProfilePage() {
       setLoading(true)
       
       if (profile.status === 1 || profile.status === 3) {
-        if (!confirm('你要取关该用户吗?')) {
-          return
-        }
-        const response = await userService.unfollowUser(profile.relationId)
-        if (response.success) {
-          setProfile(prev => prev ? {
-            ...prev,
-            status: prev.status === 3 ? 2 : 0
-          } : null)
-        }
-      } else {
-        const response = await userService.followUser(profile.relationId)
-        if (response.success) {
-          setProfile(prev => prev ? {
-            ...prev,
-            status: prev.status === 2 ? 3 : 1
-          } : null)
-        }
+        setShowUnfollowConfirm(true)
+        setLoading(false)
+        return
+      }
+
+      const response = await userService.followUser(profile.relationId)
+      if (response.success) {
+        setProfile(prev => prev ? {
+          ...prev,
+          status: prev.status === 2 ? 3 : 1
+        } : null)
+        setSuccessMessage('关注成功！')
+        setShowSuccess(true)
+        setTimeout(() => setShowSuccess(false), 3000)
       }
     } catch (error) {
       console.error('关注操作失败:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleConfirmUnfollow = async () => {
+    if (!profile) return
+    
+    try {
+      setLoading(true)
+      const response = await userService.unfollowUser(profile.relationId)
+      if (response.success) {
+        setProfile(prev => prev ? {
+          ...prev,
+          status: prev.status === 3 ? 2 : 0
+        } : null)
+        setSuccessMessage('取关成功！')
+        setShowSuccess(true)
+        setTimeout(() => setShowSuccess(false), 3000)
+      }
+    } catch (error) {
+      console.error('取关失败:', error)
+    } finally {
+      setLoading(false)
+      setShowUnfollowConfirm(false)
     }
   }
 
@@ -128,6 +152,23 @@ export default function UserProfilePage() {
 
   return (
     <MainLayout>
+      {showSuccess && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-50 border border-green-200 rounded-lg px-6 py-4 shadow-lg flex items-center gap-2 z-50">
+          <div className="bg-green-100 rounded-full p-1">
+            <Check className="w-4 h-4 text-green-600" />
+          </div>
+          <span className="text-green-800">{successMessage}</span>
+        </div>
+      )}
+
+      <ConfirmDialog
+        isOpen={showUnfollowConfirm}
+        title="取消关注"
+        message="确定要取消关注该用户吗？"
+        onConfirm={handleConfirmUnfollow}
+        onCancel={() => setShowUnfollowConfirm(false)}
+      />
+
       <div className="pt-4 px-4">
         {/* 个人信息卡片 */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">

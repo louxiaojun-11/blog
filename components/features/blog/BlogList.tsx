@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react'
 import { BlogPost } from '@/types/api'
 import { blogService } from '@/services/api'
 import Image from 'next/image'
-import { MessageCircle, Heart, Share, Eye, Trash2 } from 'lucide-react'
+import { MessageCircle, Heart, Share, Eye, Trash2, Check } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import ConfirmDialog from '@/components/common/ConfirmDialog'
+import SuccessMessage from '@/components/common/SuccessMessage'
 
 interface BlogListProps {
   userId?: number;
@@ -19,6 +21,9 @@ export default function BlogList({ userId, blogList: initialBlogList, isPersonal
   const [expandedBlogs, setExpandedBlogs] = useState<Set<number>>(new Set())
   const [deleting, setDeleting] = useState<number | null>(null)
   const { user } = useAuth()
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [blogToDelete, setBlogToDelete] = useState<number | null>(null)
+  const [showSuccess, setShowSuccess] = useState(false)
 
   useEffect(() => {
     if (initialBlogList) {
@@ -61,23 +66,29 @@ export default function BlogList({ userId, blogList: initialBlogList, isPersonal
     })
   }
 
-  const handleDelete = async (blogId: number) => {
-    if (!confirm('确定要删除这篇博文吗？')) {
-      return
-    }
+  const handleDeleteClick = (blogId: number) => {
+    setBlogToDelete(blogId)
+    setShowDeleteConfirm(true)
+  }
 
+  const handleConfirmDelete = async () => {
+    if (!blogToDelete) return
+    
     try {
-      setDeleting(blogId)
-      const response = await blogService.deleteBlog(blogId)
+      setDeleting(blogToDelete)
+      const response = await blogService.deleteBlog(blogToDelete)
       if (response.success) {
-        setBlogs(blogs.filter(blog => blog.id !== blogId))
-        alert('删除成功！')
+        setBlogs(blogs.filter(blog => blog.id !== blogToDelete))
+        setShowDeleteConfirm(false)
+        setShowSuccess(true)
+        setTimeout(() => setShowSuccess(false), 3000)
       }
     } catch (error) {
       console.error('Failed to delete blog:', error)
       alert('删除失败，请重试')
     } finally {
       setDeleting(null)
+      setBlogToDelete(null)
     }
   }
 
@@ -118,68 +129,90 @@ export default function BlogList({ userId, blogList: initialBlogList, isPersonal
   }
 
   return (
-    <div className="space-y-4">
-      {blogs.map((blog) => {
-        const isExpanded = expandedBlogs.has(blog.id)
-        const needsExpansion = blog.content.length > 100
+    <>
+      {showSuccess && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-50 border border-green-200 rounded-lg px-6 py-4 shadow-lg flex items-center gap-2 z-50">
+          <div className="bg-green-100 rounded-full p-1">
+            <Check className="w-4 h-4 text-green-600" />
+          </div>
+          <span className="text-green-800">删除成功！</span>
+        </div>
+      )}
 
-        return (
-          <article key={blog.id} className={isPersonal ? "bg-white rounded-lg shadow p-6" : "p-4 border-b last:border-b-0"}>
-            <h3 className="text-lg font-bold mb-2">{blog.title}</h3>
-            <div className="relative">
-              <p className={`text-gray-600 mb-2 ${!isExpanded && needsExpansion ? 'line-clamp-2' : ''}`}>
-                {blog.content}
-              </p>
-              {needsExpansion && (
-                <button
-                  onClick={() => toggleExpand(blog.id)}
-                  className="text-[#FF8200] hover:text-[#ff9933]"
-                >
-                  {isExpanded ? '收起' : '展开全文'}
-                </button>
-              )}
-            </div>
-            <div className="flex items-center justify-between mt-4">
-              <div className="flex items-center gap-2">
-                <Image
-                  src={blog.author.avatar}
-                  alt={blog.author.username}
-                  width={24}
-                  height={24}
-                  className="rounded-full"
-                />
-                <span className="text-gray-600">{blog.author.username}</span>
-                <span className="text-gray-400">·</span>
-                <span className="text-gray-400">{blog.createdAt}</span>
-              </div>
-              <div className="flex gap-6 text-gray-500">
-                <span className="flex items-center gap-2">
-                  <Eye className="h-5 w-5" />
-                  <span>{blog.views}</span>
-                </span>
-                <span className="flex items-center gap-2">
-                  <Heart className="h-5 w-5" />
-                  <span>{blog.likes}</span>
-                </span>
-                <span className="flex items-center gap-2">
-                  <MessageCircle className="h-5 w-5" />
-                  <span>{blog.comments}</span>
-                </span>
-                {isPersonal && (
+      <div className="space-y-4">
+        {blogs.map((blog) => {
+          const isExpanded = expandedBlogs.has(blog.id)
+          const needsExpansion = blog.content.length > 100
+
+          return (
+            <article key={blog.id} className={isPersonal ? "bg-white rounded-lg shadow p-6" : "p-4 border-b last:border-b-0"}>
+              <h3 className="text-lg font-bold mb-2">{blog.title}</h3>
+              <div className="relative">
+                <p className={`text-gray-600 mb-2 ${!isExpanded && needsExpansion ? 'line-clamp-2' : ''}`}>
+                  {blog.content}
+                </p>
+                {needsExpansion && (
                   <button
-                    onClick={() => handleDelete(blog.id)}
-                    disabled={deleting === blog.id}
-                    className="flex items-center gap-2 text-red-500 hover:text-red-600 disabled:opacity-50"
+                    onClick={() => toggleExpand(blog.id)}
+                    className="text-[#FF8200] hover:text-[#ff9933]"
                   >
-                    <Trash2 className="h-5 w-5" />
-                    <span>{deleting === blog.id ? '删除中...' : '删除'}</span>
+                    {isExpanded ? '收起' : '展开全文'}
                   </button>
                 )}
               </div>
-            </div>
-          </article>
-        )
-      })}
-    </div>
+              <div className="flex items-center justify-between mt-4">
+                <div className="flex items-center gap-2">
+                  <Image
+                    src={blog.author.avatar}
+                    alt={blog.author.username}
+                    width={24}
+                    height={24}
+                    className="rounded-full"
+                  />
+                  <span className="text-gray-600">{blog.author.username}</span>
+                  <span className="text-gray-400">·</span>
+                  <span className="text-gray-400">{blog.createdAt}</span>
+                </div>
+                <div className="flex gap-6 text-gray-500">
+                  <span className="flex items-center gap-2">
+                    <Eye className="h-5 w-5" />
+                    <span>{blog.views}</span>
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <Heart className="h-5 w-5" />
+                    <span>{blog.likes}</span>
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <MessageCircle className="h-5 w-5" />
+                    <span>{blog.comments}</span>
+                  </span>
+                  {isPersonal && (
+                    <button
+                      onClick={() => handleDeleteClick(blog.id)}
+                      disabled={deleting === blog.id}
+                      className="flex items-center gap-2 text-red-500 hover:text-red-600 disabled:opacity-50"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                      <span>{deleting === blog.id ? '删除中...' : '删除'}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </article>
+          )
+        })}
+      </div>
+
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        title="删除博文"
+        message="确定要删除这篇博文吗？此操作不可撤销。"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          setShowDeleteConfirm(false)
+          setBlogToDelete(null)
+        }}
+      />
+    </>
   )
 } 

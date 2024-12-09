@@ -44,9 +44,6 @@ export default function SearchPage() {
     <MainLayout>
       <div className="pt-4 px-4">
         <div className="mb-4">
-          <h1 className="text-xl font-bold">
-            {searchType === 'user' ? '用户' : '博文'}搜索结果
-          </h1>
           <p className="text-gray-500">
             搜索内容: {searchContent}
           </p>

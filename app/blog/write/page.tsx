@@ -38,9 +38,9 @@ export default function WriteBlogPage() {
 
       if (response.success) {
         setShowSuccess(true)
-        // 3秒后跳转到博文列表页
+        // 3秒后刷新页面
         setTimeout(() => {
-          router.push('/blog')
+          window.location.reload()
         }, 3000)
       }
     } catch (error) {
@@ -60,7 +60,7 @@ export default function WriteBlogPage() {
             <div className="bg-green-100 rounded-full p-1">
               <Check className="w-4 h-4 text-green-600" />
             </div>
-            <span className="text-green-800">发布成功！3秒后跳转到博文列表</span>
+            <span className="text-green-800">发布成功！</span>
           </div>
         )}
 
