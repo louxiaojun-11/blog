@@ -6,12 +6,19 @@ import Image from 'next/image'
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { userService } from '@/services/api'
+import { useSearchContext } from '@/contexts/SearchContext'
 
 export default function Header() {
+  const [searchType, setSearchType] = useState<'blog' | 'user'>('blog')
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false)
+  
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { logout, user } = useAuth();
+  const [searchQuery, setSearchQuery] = useState('')
+  const { setSearchResults, setIsSearching } = useSearchContext()
 
   // 点击页面其他地方时关闭下拉菜单
   useEffect(() => {
@@ -34,6 +41,19 @@ export default function Header() {
     }
   };
 
+  const handleSearch = () => {
+    if (!searchQuery.trim()) return
+    
+    // 构建搜索URL
+    const searchParams = new URLSearchParams({
+      content: searchQuery,
+      type: searchType
+    })
+    
+    // 跳转到搜索结果页
+    router.push(`/search?${searchParams.toString()}`)
+  }
+
   return (
     <header className="fixed top-0 w-full bg-white shadow-sm z-50">
       <div className="container max-w-7xl mx-auto h-16 flex items-center justify-between px-4">
@@ -46,12 +66,61 @@ export default function Header() {
             className="dark:invert"
           />
           <div className="relative">
-            <input
-              type="search"
-              placeholder="搜索"
-              className="pl-10 pr-4 py-2 rounded-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#FF8200]"
-            />
-            <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+            <div className="flex items-center relative">
+              <button
+                type="button"
+                onClick={() => setShowSearchDropdown(!showSearchDropdown)}
+                className="absolute left-3 top-2.5 flex items-center gap-1 text-gray-400 hover:text-gray-600 z-10"
+              >
+                <Search className="h-5 w-5" />
+                <span className="text-sm">{searchType === 'blog' ? '博文' : '用户'}</span>
+                <span className="text-xs ml-1">▼</span>
+              </button>
+              <div className="flex items-center">
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={searchType === 'blog' ? '搜索博文...' : '搜索用户...'}
+                  className="pl-24 pr-4 py-2 rounded-l-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-[#FF8200] w-[300px]"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearch()
+                    }
+                  }}
+                />
+                <button 
+                  onClick={handleSearch}
+                  className="px-4 py-2 bg-[#FF8200] text-white rounded-r-full hover:bg-[#ff9933]"
+                >
+                  搜索
+                </button>
+              </div>
+
+              {/* 搜索类型下拉框 */}
+              {showSearchDropdown && (
+                <div className="absolute top-full left-3 mt-1 bg-white rounded-lg shadow-lg py-2 w-20">
+                  <button
+                    onClick={() => {
+                      setSearchType('blog')
+                      setShowSearchDropdown(false)
+                    }}
+                    className="w-full px-4 py-2 text-left hover:bg-gray-50"
+                  >
+                    博文
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSearchType('user')
+                      setShowSearchDropdown(false)
+                    }}
+                    className="w-full px-4 py-2 text-left hover:bg-gray-50"
+                  >
+                    用户
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         

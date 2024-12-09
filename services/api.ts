@@ -419,5 +419,21 @@ export const userService = {
       console.error('Error fetching user relation profile:', error);
       throw error;
     }
+  },
+
+  searchUsers: async (searchContent: string) => {
+    try {
+      const response = await api.get<ApiResponse<{
+        relationId: number;
+        username: string;
+        avatar: string;
+      }[]>>('/relation/search', {
+        params: { searchContent }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error searching users:', error);
+      throw error;
+    }
   }
 }; 
