@@ -435,5 +435,25 @@ export const userService = {
       console.error('Error searching users:', error);
       throw error;
     }
+  },
+
+  followUser: async (relationId: number) => {
+    try {
+      const response = await api.put<ApiResponse<any>>(`/relation/follow?relationId=${relationId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error following user:', error);
+      throw error;
+    }
+  },
+
+  unfollowUser: async (relationId: number) => {
+    try {
+      const response = await api.put<ApiResponse<any>>(`/relation/cancelfollow?relationId=${relationId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error unfollowing user:', error);
+      throw error;
+    }
   }
 }; 

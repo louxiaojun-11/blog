@@ -51,7 +51,7 @@ export default function UserProfilePage() {
   const searchParams = useSearchParams()
   const relationId = searchParams.get('relationId')
   const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -72,6 +72,39 @@ export default function UserProfilePage() {
 
     loadProfile()
   }, [relationId])
+
+  const handleFollowAction = async () => {
+    if (!profile || loading) return
+    
+    try {
+      setLoading(true)
+      
+      if (profile.status === 1 || profile.status === 3) {
+        if (!confirm('你要取关该用户吗?')) {
+          return
+        }
+        const response = await userService.unfollowUser(profile.relationId)
+        if (response.success) {
+          setProfile(prev => prev ? {
+            ...prev,
+            status: prev.status === 3 ? 2 : 0
+          } : null)
+        }
+      } else {
+        const response = await userService.followUser(profile.relationId)
+        if (response.success) {
+          setProfile(prev => prev ? {
+            ...prev,
+            status: prev.status === 2 ? 3 : 1
+          } : null)
+        }
+      }
+    } catch (error) {
+      console.error('关注操作失败:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -123,8 +156,14 @@ export default function UserProfilePage() {
                     {profile.introduce || '这个人很懒，还没有写简介...'}
                   </p>
                 </div>
-                <button className="px-4 py-2 bg-[#FF8200] text-white rounded-full hover:bg-[#ff9933]">
-                  {getStatusText(profile.status)}
+                <button
+                  onClick={handleFollowAction}
+                  disabled={loading}
+                  className={`px-4 py-2 rounded-full ${
+                    loading ? 'bg-gray-300' : 'bg-[#FF8200] hover:bg-[#ff9933]'
+                  } text-white`}
+                >
+                  {loading ? '处理中...' : getStatusText(profile.status)}
                 </button>
               </div>
             </div>

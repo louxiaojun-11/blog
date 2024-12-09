@@ -33,6 +33,11 @@ export default function SearchPage() {
     }
 
     performSearch()
+
+    return () => {
+      setIsSearching(false)
+      setSearchResults([])
+    }
   }, [searchContent, searchType, setSearchResults, setIsSearching])
 
   return (
