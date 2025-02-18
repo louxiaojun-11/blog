@@ -395,7 +395,7 @@ export const userService = {
     }
   },
 
-  getUserRelationProfile: async (userId: number) => {
+  getUserRelationProfile: async (userId: number, page: number = 1, pageSize: number = 5) => {
     try {
       const response = await api.get<ApiResponse<{
         relationId: number;
@@ -405,22 +405,21 @@ export const userService = {
         follower: number;
         introduce: string | null;
         status: number;
-        blogList: {
-          id: number;
-          title: string;
-          content: string;
-          userID: number;
-          likes: number;
-          views: number;
-          comments: number;
-          createdAt: string;
-          author: {
-            id: number | null;
-            avatar: string;
-            username: string;
-          };
-        }[];
-      }>>(`/relation/profile?relationId=${userId}`);
+        pageResult: {
+          total: number;
+          records: {
+            id: number;
+            title: string;
+            content: string;
+            userId: number;
+            likes: number;
+            views: number;
+            comments: number;
+            createdAt: string;
+            updatedAt: string;
+          }[];
+        };
+      }>>(`/relation/profile?userId=${userId}&page=${page}&pageSize=${pageSize}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching user relation profile:', error);

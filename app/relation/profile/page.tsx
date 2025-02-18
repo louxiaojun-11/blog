@@ -17,21 +17,24 @@ interface UserProfile {
   follower: number;
   introduce: string | null;
   status: number;
-  blogList: {
-    id: number;
-    title: string;
-    content: string;
-    userID: number;
-    likes: number;
-    views: number;
-    comments: number;
-    createdAt: string;
-    author: {
-      id: number | null;
-      avatar: string;
-      username: string;
-    };
-  }[];
+  pageResult: {
+    records: {
+      id: number;
+      title: string;
+      content: string;
+      userID: number;
+      likes: number;
+      views: number;
+      comments: number;
+      createdAt: string;
+      author: {
+        id: number | null;
+        avatar: string;
+        username: string;
+      };
+    }[];
+    total: number;
+  };
 }
 
 const getStatusText = (status: number) => {
@@ -57,6 +60,8 @@ export default function UserProfilePage() {
   const [showSuccess, setShowSuccess] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const [showUnfollowConfirm, setShowUnfollowConfirm] = useState(false)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(5)
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -64,7 +69,7 @@ export default function UserProfilePage() {
       
       try {
         setLoading(true)
-        const response = await userService.getUserRelationProfile(Number(relationId))
+        const response = await userService.getUserRelationProfile(Number(relationId), page, pageSize)
         if (response.success) {
           setProfile(response.data)
         }
@@ -76,7 +81,7 @@ export default function UserProfilePage() {
     }
 
     loadProfile()
-  }, [relationId])
+  }, [relationId, page, pageSize])
 
   const handleFollowAction = async () => {
     if (!profile || loading) return
@@ -128,6 +133,17 @@ export default function UserProfilePage() {
       setLoading(false)
       setShowUnfollowConfirm(false)
     }
+  }
+
+  // Add pagination handlers
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+  }
+
+  const handlePageSizeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const newPageSize = parseInt(event.target.value)
+    setPageSize(newPageSize)
+    setPage(1) // Reset to first page when changing page size
   }
 
   if (loading) {
@@ -214,7 +230,22 @@ export default function UserProfilePage() {
         {/* 博文列表 */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-bold mb-6">Ta的博文</h2>
-          <BlogList blogList={profile.blogList} />
+          <BlogList 
+            isPersonal={false}
+            blogList={profile.pageResult?.records.map(blog => ({
+              ...blog,
+              author: {
+                userId: profile.relationId,
+                username: profile.username,
+                avatar: profile.avatar
+              }
+            })) || []}
+            total={profile.pageResult?.total || 0}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            currentPage={page}
+            currentPageSize={pageSize}
+          />
         </div>
       </div>
     </MainLayout>

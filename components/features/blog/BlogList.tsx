@@ -13,9 +13,23 @@ interface BlogListProps {
   userId?: number;
   blogList?: BlogPost[];
   isPersonal?: boolean;
+  total?: number;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (event: React.ChangeEvent<HTMLSelectElement>) => void;
+  currentPage?: number;
+  currentPageSize?: number;
 }
 
-export default function BlogList({ userId, blogList: initialBlogList, isPersonal = false }: BlogListProps) {
+export default function BlogList({ 
+  userId, 
+  blogList: initialBlogList, 
+  isPersonal = false,
+  total,
+  onPageChange,
+  onPageSizeChange,
+  currentPage,
+  currentPageSize
+}: BlogListProps) {
   const [blogs, setBlogs] = useState<BlogPost[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedBlogs, setExpandedBlogs] = useState<Set<number>>(new Set())
@@ -28,12 +42,14 @@ export default function BlogList({ userId, blogList: initialBlogList, isPersonal
   // Add pagination states
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(5)
-  const [total, setTotal] = useState(0)
+  const [totalItems, setTotalItems] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
 
   useEffect(() => {
     if (initialBlogList) {
       setBlogs(initialBlogList)
+      setTotalItems(total || initialBlogList.length)
+      setTotalPages(Math.ceil((total || initialBlogList.length) / (currentPageSize || pageSize)))
       setLoading(false)
       return
     }
@@ -45,15 +61,14 @@ export default function BlogList({ userId, blogList: initialBlogList, isPersonal
         setLoading(true)
         const response = await blogService.getUserBlogs({
           userId: userId || user?.userId,
-          page: page,
-          pageSize: pageSize
+          page: currentPage || page,
+          pageSize: currentPageSize || pageSize
         })
         
         if (response.success) {
           setBlogs(response.data.records)
-          setTotal(response.data.total)
-          // 计算总页数
-          setTotalPages(Math.ceil(response.data.total / pageSize))
+          setTotalItems(response.data.total)
+          setTotalPages(Math.ceil(response.data.total / (currentPageSize || pageSize)))
         }
       } catch (error) {
         console.error('Failed to load blogs:', error)
@@ -63,17 +78,25 @@ export default function BlogList({ userId, blogList: initialBlogList, isPersonal
     }
 
     loadBlogs()
-  }, [userId, initialBlogList, user?.userId, page, pageSize])
+  }, [userId, initialBlogList, user?.userId, currentPage, currentPageSize, total])
 
   // Add pagination handlers
   const handlePageChange = (newPage: number) => {
-    setPage(newPage)
+    if (onPageChange) {
+      onPageChange(newPage)
+    } else {
+      setPage(newPage)
+    }
   }
 
   const handlePageSizeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const newPageSize = parseInt(event.target.value)
-    setPageSize(newPageSize)
-    setPage(1) // Reset to first page when changing page size
+    if (onPageSizeChange) {
+      onPageSizeChange(event)
+    } else {
+      const newPageSize = parseInt(event.target.value)
+      setPageSize(newPageSize)
+      setPage(1)
+    }
   }
 
   // Generate page numbers array
@@ -106,12 +129,15 @@ export default function BlogList({ userId, blogList: initialBlogList, isPersonal
 
   // Render pagination controls
   const renderPagination = () => {
+    const currentTotalPages = Math.ceil(totalItems / (currentPageSize || pageSize))
+    const currentPageNum = currentPage || page
+
     return (
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 px-4">
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600">每页显示：</span>
           <select
-            value={pageSize}
+            value={currentPageSize || pageSize}
             onChange={handlePageSizeChange}
             className="border rounded px-2 py-1 text-sm"
           >
@@ -121,21 +147,21 @@ export default function BlogList({ userId, blogList: initialBlogList, isPersonal
             <option value="50">50条</option>
           </select>
           <span className="text-sm text-gray-600">
-            共 {total} 条记录，{totalPages} 页
+            共 {totalItems} 条记录，{currentTotalPages} 页
           </span>
         </div>
         
         <div className="flex items-center gap-2">
           <button
             onClick={() => handlePageChange(1)}
-            disabled={page === 1}
+            disabled={currentPageNum === 1}
             className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50"
           >
             首页
           </button>
           <button
-            onClick={() => handlePageChange(page - 1)}
-            disabled={page === 1}
+            onClick={() => handlePageChange(currentPageNum - 1)}
+            disabled={currentPageNum === 1}
             className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50"
           >
             上一页
@@ -146,7 +172,7 @@ export default function BlogList({ userId, blogList: initialBlogList, isPersonal
               key={pageNum}
               onClick={() => handlePageChange(pageNum)}
               className={`px-3 py-1 rounded border ${
-                pageNum === page
+                pageNum === currentPageNum
                   ? 'bg-[#FF8200] text-white'
                   : 'hover:bg-gray-50'
               }`}
@@ -156,15 +182,15 @@ export default function BlogList({ userId, blogList: initialBlogList, isPersonal
           ))}
           
           <button
-            onClick={() => handlePageChange(page + 1)}
-            disabled={page === totalPages}
+            onClick={() => handlePageChange(currentPageNum + 1)}
+            disabled={currentPageNum === currentTotalPages}
             className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50"
           >
             下一页
           </button>
           <button
-            onClick={() => handlePageChange(totalPages)}
-            disabled={page === totalPages}
+            onClick={() => handlePageChange(currentTotalPages)}
+            disabled={currentPageNum === currentTotalPages}
             className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50"
           >
             末页
@@ -263,8 +289,12 @@ export default function BlogList({ userId, blogList: initialBlogList, isPersonal
         {blogs.map((blog) => {
           const isExpanded = expandedBlogs.has(blog.id)
           const needsExpansion = blog.content.length > 100
-          const authorAvatar = user?.avatar || '/default-avatar.png'
-          const authorName = user?.username || '未知用户'
+          const authorAvatar = isPersonal 
+            ? (user?.avatar || '/default-avatar.png')
+            : (blog.author?.avatar || '/default-avatar.png')
+          const authorName = isPersonal
+            ? (user?.username || '未知用户')
+            : (blog.author?.username || '未知用户')
 
           return (
             <article key={blog.id} className={isPersonal ? "bg-white rounded-lg shadow p-6" : "p-4 border-b last:border-b-0"}>
