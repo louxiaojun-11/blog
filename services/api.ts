@@ -212,10 +212,17 @@ export const newsService = {
 };
 
 export const blogService = {
-  getUserBlogs: async (userId?: number) => {
+  getUserBlogs: async (params: {
+    userId?: number;
+    page: number;
+    pageSize: number;
+  }) => {
     try {
-      const response = await api.get<ApiResponse<BlogPost[]>>('/user/bloglist', {
-        params: { userId }
+      const response = await api.get<ApiResponse<{
+        total: number;
+        records: BlogPost[];
+      }>>('/user/bloglist', {
+        params: params
       });
       return response.data;
     } catch (error) {

@@ -24,6 +24,12 @@ export default function BlogList({ userId, blogList: initialBlogList, isPersonal
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [blogToDelete, setBlogToDelete] = useState<number | null>(null)
   const [showSuccess, setShowSuccess] = useState(false)
+  
+  // Add pagination states
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(5)
+  const [total, setTotal] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
 
   useEffect(() => {
     if (initialBlogList) {
@@ -37,12 +43,17 @@ export default function BlogList({ userId, blogList: initialBlogList, isPersonal
       
       try {
         setLoading(true)
-        const response = await blogService.getUserBlogs(userId || user?.userId)
+        const response = await blogService.getUserBlogs({
+          userId: userId || user?.userId,
+          page: page,
+          pageSize: pageSize
+        })
+        
         if (response.success) {
-          const sortedBlogs = [...response.data].sort((a, b) => {
-            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          })
-          setBlogs(sortedBlogs)
+          setBlogs(response.data.records)
+          setTotal(response.data.total)
+          // 计算总页数
+          setTotalPages(Math.ceil(response.data.total / pageSize))
         }
       } catch (error) {
         console.error('Failed to load blogs:', error)
@@ -52,7 +63,116 @@ export default function BlogList({ userId, blogList: initialBlogList, isPersonal
     }
 
     loadBlogs()
-  }, [userId, initialBlogList, user?.userId])
+  }, [userId, initialBlogList, user?.userId, page, pageSize])
+
+  // Add pagination handlers
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+  }
+
+  const handlePageSizeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const newPageSize = parseInt(event.target.value)
+    setPageSize(newPageSize)
+    setPage(1) // Reset to first page when changing page size
+  }
+
+  // Generate page numbers array
+  const getPageNumbers = () => {
+    const pageNumbers = []
+    const maxVisiblePages = 5
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i)
+      }
+    } else {
+      if (page <= 3) {
+        for (let i = 1; i <= 5; i++) {
+          pageNumbers.push(i)
+        }
+      } else if (page >= totalPages - 2) {
+        for (let i = totalPages - 4; i <= totalPages; i++) {
+          pageNumbers.push(i)
+        }
+      } else {
+        for (let i = page - 2; i <= page + 2; i++) {
+          pageNumbers.push(i)
+        }
+      }
+    }
+
+    return pageNumbers
+  }
+
+  // Render pagination controls
+  const renderPagination = () => {
+    return (
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6 px-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-600">每页显示：</span>
+          <select
+            value={pageSize}
+            onChange={handlePageSizeChange}
+            className="border rounded px-2 py-1 text-sm"
+          >
+            <option value="5">5条</option>
+            <option value="10">10条</option>
+            <option value="20">20条</option>
+            <option value="50">50条</option>
+          </select>
+          <span className="text-sm text-gray-600">
+            共 {total} 条记录，{totalPages} 页
+          </span>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handlePageChange(1)}
+            disabled={page === 1}
+            className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50"
+          >
+            首页
+          </button>
+          <button
+            onClick={() => handlePageChange(page - 1)}
+            disabled={page === 1}
+            className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50"
+          >
+            上一页
+          </button>
+          
+          {getPageNumbers().map(pageNum => (
+            <button
+              key={pageNum}
+              onClick={() => handlePageChange(pageNum)}
+              className={`px-3 py-1 rounded border ${
+                pageNum === page
+                  ? 'bg-[#FF8200] text-white'
+                  : 'hover:bg-gray-50'
+              }`}
+            >
+              {pageNum}
+            </button>
+          ))}
+          
+          <button
+            onClick={() => handlePageChange(page + 1)}
+            disabled={page === totalPages}
+            className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50"
+          >
+            下一页
+          </button>
+          <button
+            onClick={() => handlePageChange(totalPages)}
+            disabled={page === totalPages}
+            className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50"
+          >
+            末页
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   const toggleExpand = (blogId: number) => {
     setExpandedBlogs(prev => {
@@ -96,7 +216,7 @@ export default function BlogList({ userId, blogList: initialBlogList, isPersonal
     return <div className="text-center py-8">加载中...</div>
   }
 
-  if (blogs.length === 0) {
+  if (!blogs || blogs.length === 0) {
     if (isPersonal) {
       return (
         <div className="flex flex-col items-center justify-center py-20 text-gray-500">
@@ -143,12 +263,14 @@ export default function BlogList({ userId, blogList: initialBlogList, isPersonal
         {blogs.map((blog) => {
           const isExpanded = expandedBlogs.has(blog.id)
           const needsExpansion = blog.content.length > 100
+          const authorAvatar = user?.avatar || '/default-avatar.png'
+          const authorName = user?.username || '未知用户'
 
           return (
             <article key={blog.id} className={isPersonal ? "bg-white rounded-lg shadow p-6" : "p-4 border-b last:border-b-0"}>
               <h3 className="text-lg font-bold mb-2">{blog.title}</h3>
               <div className="relative">
-                <p className={`text-gray-600 mb-2 ${!isExpanded && needsExpansion ? 'line-clamp-2' : ''}`}>
+                <p className={`text-gray-600 mb-2 whitespace-pre-wrap break-words ${!isExpanded && needsExpansion ? 'line-clamp-2' : ''}`}>
                   {blog.content}
                 </p>
                 {needsExpansion && (
@@ -163,28 +285,28 @@ export default function BlogList({ userId, blogList: initialBlogList, isPersonal
               <div className="flex items-center justify-between mt-4">
                 <div className="flex items-center gap-2">
                   <Image
-                    src={blog.author.avatar}
-                    alt={blog.author.username}
+                    src={authorAvatar}
+                    alt={authorName}
                     width={24}
                     height={24}
                     className="rounded-full"
                   />
-                  <span className="text-gray-600">{blog.author.username}</span>
+                  <span className="text-gray-600">{authorName}</span>
                   <span className="text-gray-400">·</span>
                   <span className="text-gray-400">{blog.createdAt}</span>
                 </div>
                 <div className="flex gap-6 text-gray-500">
                   <span className="flex items-center gap-2">
                     <Eye className="h-5 w-5" />
-                    <span>{blog.views}</span>
+                    <span>{blog.views || 0}</span>
                   </span>
                   <span className="flex items-center gap-2">
                     <Heart className="h-5 w-5" />
-                    <span>{blog.likes}</span>
+                    <span>{blog.likes || 0}</span>
                   </span>
                   <span className="flex items-center gap-2">
                     <MessageCircle className="h-5 w-5" />
-                    <span>{blog.comments}</span>
+                    <span>{blog.comments || 0}</span>
                   </span>
                   {isPersonal && (
                     <button
@@ -202,6 +324,9 @@ export default function BlogList({ userId, blogList: initialBlogList, isPersonal
           )
         })}
       </div>
+
+      {/* Add pagination controls */}
+      {blogs && blogs.length > 0 && renderPagination()}
 
       <ConfirmDialog
         isOpen={showDeleteConfirm}

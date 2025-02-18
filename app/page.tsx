@@ -4,6 +4,8 @@ import MainLayout from '@/app/layouts/MainLayout'
 import Feed from "@/components/layout/Feed"
 import RightSidebar from "@/components/layout/RightSidebar"
 import SearchResults from '@/components/features/search/SearchResults'
+import BlogList from '@/components/features/blog/BlogList'
+import { useAuth } from '@/contexts/AuthContext'
 import { useState } from 'react'
 
 export default function Home() {
@@ -13,11 +15,20 @@ export default function Home() {
     avatar: string;
   }[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const { user } = useAuth()
 
   return (
     <MainLayout>
       <div className="flex gap-4 pt-4 px-4">
         <div className="flex-1 min-w-0 space-y-4">
+          {/* 我的博文 */}
+          {user && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-bold mb-6">我的博文</h2>
+              <BlogList isPersonal={true} />
+            </div>
+          )}
+          
           {/* 搜索结果 */}
           <SearchResults 
             results={searchResults} 
