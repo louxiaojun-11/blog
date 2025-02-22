@@ -78,4 +78,14 @@ export interface BlogPost {
   views: number;
   likes: number;
   comments: number;
+}
+
+export interface Comment {
+  id: number;
+  blogId: number;
+  content: string;
+  userId: number;
+  username: string;
+  avatar: string;
+  createdAt: string;
 } 

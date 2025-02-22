@@ -8,6 +8,7 @@ import { MessageCircle, Heart, Share, Eye, Trash2, Check } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
 import SuccessMessage from '@/components/common/SuccessMessage'
+import CommentList from '@/components/features/blog/CommentList'
 
 interface BlogListProps {
   userId?: number;
@@ -45,6 +46,18 @@ export default function BlogList({
   const [totalItems, setTotalItems] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
 
+  // Add like related states
+  const [liking, setLiking] = useState<number | null>(null)
+  const [showLikeConfirm, setShowLikeConfirm] = useState(false)
+  const [blogToUnlike, setBlogToUnlike] = useState<number | null>(null)
+
+  // Add a state to mark the action type
+  const [successAction, setSuccessAction] = useState<'like' | 'unlike' | 'delete' | null>(null)
+
+  // Add new states
+  const [showComments, setShowComments] = useState(false)
+  const [currentBlogId, setCurrentBlogId] = useState<number | null>(null)
+
   useEffect(() => {
     if (initialBlogList) {
       setBlogs(initialBlogList)
@@ -54,6 +67,10 @@ export default function BlogList({
       return
     }
 
+    // 使用传入的 currentPage 或默认值
+    const pageToLoad = currentPage || page
+    setPage(pageToLoad)  // 设置当前页码
+
     const loadBlogs = async () => {
       if (!userId && !user?.userId) return
       
@@ -61,7 +78,7 @@ export default function BlogList({
         setLoading(true)
         const response = await blogService.getUserBlogs({
           userId: userId || user?.userId,
-          page: currentPage || page,
+          page: pageToLoad,  // 使用正确的页码
           pageSize: currentPageSize || pageSize
         })
         
@@ -78,7 +95,7 @@ export default function BlogList({
     }
 
     loadBlogs()
-  }, [userId, initialBlogList, user?.userId, currentPage, currentPageSize, total])
+  }, [userId, initialBlogList, user?.userId, currentPage, currentPageSize, page, pageSize, total])
 
   // Add pagination handlers
   const handlePageChange = (newPage: number) => {
@@ -86,16 +103,22 @@ export default function BlogList({
       onPageChange(newPage)
     } else {
       setPage(newPage)
+      if (!initialBlogList) {
+        loadBlogs(newPage, currentPageSize || pageSize)
+      }
     }
   }
 
   const handlePageSizeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const newPageSize = parseInt(event.target.value)
     if (onPageSizeChange) {
       onPageSizeChange(event)
     } else {
-      const newPageSize = parseInt(event.target.value)
       setPageSize(newPageSize)
       setPage(1)
+      if (!initialBlogList) {
+        loadBlogs(1, newPageSize)
+      }
     }
   }
 
@@ -226,8 +249,12 @@ export default function BlogList({
       if (response.success) {
         setBlogs(blogs.filter(blog => blog.id !== blogToDelete))
         setShowDeleteConfirm(false)
+        setSuccessAction('delete')
         setShowSuccess(true)
-        setTimeout(() => setShowSuccess(false), 3000)
+        setTimeout(() => {
+          setShowSuccess(false)
+          setSuccessAction(null)
+        }, 3000)
       }
     } catch (error) {
       console.error('Failed to delete blog:', error)
@@ -237,6 +264,102 @@ export default function BlogList({
       setBlogToDelete(null)
     }
   }
+
+  // Add loading blogs helper
+  const loadBlogs = async (pageNum: number, pageSizeNum: number) => {
+    if (!userId && !user?.userId) return
+    
+    try {
+      setLoading(true)
+      const response = await blogService.getUserBlogs({
+        userId: userId || user?.userId,
+        page: pageNum,
+        pageSize: pageSizeNum
+      })
+      
+      if (response.success) {
+        setBlogs(response.data.records)
+        setTotalItems(response.data.total)
+        setTotalPages(Math.ceil(response.data.total / pageSizeNum))
+      }
+    } catch (error) {
+      console.error('Failed to load blogs:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Handle like click
+  const handleLikeClick = async (blogId: number) => {
+    if (!user?.userId) {
+      alert('请先登录');
+      return;
+    }
+
+    try {
+      setLiking(blogId);
+      const response = await blogService.clickLike(user.userId, blogId);
+      
+      if (response.success) {
+        if (response.data === 0) {
+          // 点赞成功
+          setSuccessAction('like');
+          setShowSuccess(true);
+          setTimeout(() => {
+            setShowSuccess(false);
+            setSuccessAction(null);
+          }, 3000);
+          // 更新博文列表中的点赞数
+          setBlogs(blogs.map(blog => 
+            blog.id === blogId 
+              ? { ...blog, likes: blog.likes + 1 }
+              : blog
+          ));
+        } else if (response.data === 1) {
+          // 已经点过赞,询问是否取消
+          setBlogToUnlike(blogId);
+          setShowLikeConfirm(true);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to like blog:', error);
+      alert('点赞失败，请重试');
+    } finally {
+      setLiking(null);
+    }
+  };
+
+  // Handle unlike click
+  const handleConfirmUnlike = async () => {
+    if (!user?.userId || !blogToUnlike) return;
+    
+    try {
+      setLiking(blogToUnlike);
+      const response = await blogService.removeLike(user.userId, blogToUnlike);
+      
+      if (response.success) {
+        setShowLikeConfirm(false);
+        setSuccessAction('unlike');
+        setShowSuccess(true);
+        setTimeout(() => {
+          setShowSuccess(false);
+          setSuccessAction(null);
+        }, 3000);
+        // 更新博文列表中的点赞数
+        setBlogs(blogs.map(blog => 
+          blog.id === blogToUnlike 
+            ? { ...blog, likes: blog.likes - 1 }
+            : blog
+        ));
+      }
+    } catch (error) {
+      console.error('Failed to unlike blog:', error);
+      alert('取消点赞失败，请重试');
+    } finally {
+      setLiking(null);
+      setBlogToUnlike(null);
+    }
+  };
 
   if (loading) {
     return <div className="text-center py-8">加载中...</div>
@@ -281,7 +404,11 @@ export default function BlogList({
           <div className="bg-green-100 rounded-full p-1">
             <Check className="w-4 h-4 text-green-600" />
           </div>
-          <span className="text-green-800">删除成功！</span>
+          <span className="text-green-800">
+            {successAction === 'unlike' ? '取消点赞成功！' : 
+             successAction === 'like' ? '点赞成功！' : 
+             '删除成功！'}
+          </span>
         </div>
       )}
 
@@ -330,14 +457,24 @@ export default function BlogList({
                     <Eye className="h-5 w-5" />
                     <span>{blog.views || 0}</span>
                   </span>
-                  <span className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleLikeClick(blog.id)}
+                    disabled={liking === blog.id}
+                    className="flex items-center gap-2 hover:text-[#FF8200]"
+                  >
                     <Heart className="h-5 w-5" />
-                    <span>{blog.likes || 0}</span>
-                  </span>
-                  <span className="flex items-center gap-2">
+                    <span>{blog.likes}</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCurrentBlogId(blog.id)
+                      setShowComments(true)
+                    }}
+                    className="flex items-center gap-2 hover:text-[#FF8200]"
+                  >
                     <MessageCircle className="h-5 w-5" />
                     <span>{blog.comments || 0}</span>
-                  </span>
+                  </button>
                   {isPersonal && (
                     <button
                       onClick={() => handleDeleteClick(blog.id)}
@@ -368,6 +505,38 @@ export default function BlogList({
           setBlogToDelete(null)
         }}
       />
+
+      {/* Like confirmation dialog */}
+      <ConfirmDialog
+        isOpen={showLikeConfirm}
+        title="取消点赞"
+        message="是否取消对该条博文的点赞?"
+        onConfirm={handleConfirmUnlike}
+        onCancel={() => {
+          setShowLikeConfirm(false);
+          setBlogToUnlike(null);
+        }}
+      />
+
+      {/* Comment list */}
+      {showComments && currentBlogId && (
+        <CommentList
+          blogId={currentBlogId}
+          isOpen={showComments}
+          onClose={() => {
+            setShowComments(false)
+            setCurrentBlogId(null)
+          }}
+          onCommentSuccess={() => {
+            // 更新博文的评论数
+            setBlogs(blogs.map(blog => 
+              blog.id === currentBlogId
+                ? { ...blog, comments: (blog.comments || 0) + 1 }
+                : blog
+            ))
+          }}
+        />
+      )}
     </>
   )
 } 

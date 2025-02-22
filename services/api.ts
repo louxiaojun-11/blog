@@ -7,7 +7,8 @@ import {
   Group, 
   NewsItem, 
   TrendingTopic, 
-  BlogPost 
+  BlogPost,
+  Comment
 } from '@/types/api';
 import Cookies from 'js-cookie';
 
@@ -253,6 +254,63 @@ export const blogService = {
       console.error('Error deleting blog:', error);
       throw error;
     }
+  },
+
+  // 点赞博文
+  clickLike: async (userId: number, blogId: number) => {
+    try {
+      const response = await api.post<ApiResponse<number>>('/blog/clickLike', {
+        userId,
+        blogId
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error clicking like:', error);
+      throw error;
+    }
+  },
+
+  // 取消点赞
+  removeLike: async (userId: number, blogId: number) => {
+    try {
+      const response = await api.put<ApiResponse<boolean>>('/blog/removeLike', {
+        userId,
+        blogId
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error removing like:', error);
+      throw error;
+    }
+  },
+
+  // 获取评论列表
+  getComments: async (blogId: number, page: number = 1, pageSize: number = 10) => {
+    try {
+      const response = await api.get<ApiResponse<{
+        total: number;
+        records: Comment[];
+      }>>(`/blog/commentList?blogId=${blogId}&page=${page}&pageSize=${pageSize}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      throw error;
+    }
+  },
+
+  // 添加评论
+  addComment: async (data: {
+    userId: number;
+    blogId: number;
+    content: string;
+  }) => {
+    try {
+      const response = await api.post<ApiResponse<Comment>>('/blog/addComment', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      throw error;
+    }
   }
 };
 
@@ -407,17 +465,7 @@ export const userService = {
         status: number;
         pageResult: {
           total: number;
-          records: {
-            id: number;
-            title: string;
-            content: string;
-            userId: number;
-            likes: number;
-            views: number;
-            comments: number;
-            createdAt: string;
-            updatedAt: string;
-          }[];
+          records: BlogPost[];
         };
       }>>(`/relation/profile?userId=${userId}&page=${page}&pageSize=${pageSize}`);
       return response.data;
