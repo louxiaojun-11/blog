@@ -8,7 +8,7 @@ export default function LeftSidebar() {
     { icon: Home, label: '首页', href: '/' },
     { icon: Users, label: '关注', href: '/following' },
     { icon: UserPlus, label: '好友', href: '/friends' },
-    { icon: Layout, label: '小组', href: '/groups' },
+    { icon: Layout, label: '兴趣圈子', href: '/groups' },
     { icon: Newspaper, label: '资讯', href: '/news' },
     { icon: FileText, label: '我的博文', href: '/blog' },
     { icon: PenSquare, label: '写博文', href: '/blog/write' },

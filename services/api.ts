@@ -520,4 +520,22 @@ export const userService = {
       throw error;
     }
   }
+};
+
+export const hobbyService = {
+  createGroup: async (data: {
+    userId: number;
+    groupName: string;
+    introduce: string;
+    avatar: string;
+    category: string;
+  }) => {
+    try {
+      const response = await api.post<ApiResponse<any>>('/hobby/createGroup', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating group:', error);
+      throw error;
+    }
+  }
 }; 
