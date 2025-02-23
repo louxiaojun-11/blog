@@ -465,7 +465,17 @@ export const userService = {
         status: number;
         pageResult: {
           total: number;
-          records: BlogPost[];
+          records: {
+            id: number;
+            title: string;
+            content: string;
+            userId: number;
+            likes: number;
+            views: number;
+            comments: number;
+            createdAt: string;
+            updatedAt: string;
+          }[];
         };
       }>>(`/relation/profile?userId=${userId}&page=${page}&pageSize=${pageSize}`);
       return response.data;

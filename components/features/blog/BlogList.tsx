@@ -67,10 +67,6 @@ export default function BlogList({
       return
     }
 
-    // 使用传入的 currentPage 或默认值
-    const pageToLoad = currentPage || page
-    setPage(pageToLoad)  // 设置当前页码
-
     const loadBlogs = async () => {
       if (!userId && !user?.userId) return
       
@@ -78,7 +74,7 @@ export default function BlogList({
         setLoading(true)
         const response = await blogService.getUserBlogs({
           userId: userId || user?.userId,
-          page: pageToLoad,  // 使用正确的页码
+          page: currentPage || page,
           pageSize: currentPageSize || pageSize
         })
         

@@ -1,14 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import MainLayout from '@/app/layouts/MainLayout'
 import Image from 'next/image'
 import BlogList from '@/components/features/blog/BlogList'
 import { userService } from '@/services/api'
 import { Check } from 'lucide-react'
 import ConfirmDialog from '@/components/common/ConfirmDialog'
-import { blogService } from '@/services/api'
 
 interface UserProfile {
   relationId: number;
@@ -55,9 +54,7 @@ const getStatusText = (status: number) => {
 
 export default function UserProfilePage() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const relationId = searchParams.get('relationId')
-  const currentPage = Number(searchParams.get('page')) || 1
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
@@ -66,17 +63,13 @@ export default function UserProfilePage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(5)
 
-  const [blogList, setBlogList] = useState<BlogPost[]>([])
-  const [totalBlogs, setTotalBlogs] = useState(0)
-  const [loadingBlogs, setLoadingBlogs] = useState(false)
-
   useEffect(() => {
     const loadProfile = async () => {
       if (!relationId) return
       
       try {
         setLoading(true)
-        const response = await userService.getUserRelationProfile(Number(relationId), 1, 1)
+        const response = await userService.getUserRelationProfile(Number(relationId), page, pageSize)
         if (response.success) {
           setProfile(response.data)
         }
@@ -87,31 +80,8 @@ export default function UserProfilePage() {
       }
     }
 
-    const loadBlogs = async () => {
-      if (!relationId) return
-
-      try {
-        setLoadingBlogs(true)
-        const response = await blogService.getUserBlogs({
-          userId: Number(relationId),
-          page: currentPage,
-          pageSize
-        })
-        
-        if (response.success) {
-          setBlogList(response.data.records)
-          setTotalBlogs(response.data.total)
-        }
-      } catch (error) {
-        console.error('获取博文列表失败:', error)
-      } finally {
-        setLoadingBlogs(false)
-      }
-    }
-
     loadProfile()
-    loadBlogs()
-  }, [relationId, currentPage, pageSize])
+  }, [relationId, page, pageSize])
 
   const handleFollowAction = async () => {
     if (!profile || loading) return
@@ -165,19 +135,15 @@ export default function UserProfilePage() {
     }
   }
 
-  const handlePageChange = (page: number) => {
-    const url = new URL(window.location.href)
-    url.searchParams.set('page', page.toString())
-    if (relationId) {
-      url.searchParams.set('relationId', relationId)
-    }
-    router.push(url.pathname + url.search)
+  // Add pagination handlers
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
   }
 
   const handlePageSizeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const newPageSize = parseInt(event.target.value)
     setPageSize(newPageSize)
-    setPage(1)
+    setPage(1) // Reset to first page when changing page size
   }
 
   if (loading) {
@@ -220,6 +186,7 @@ export default function UserProfilePage() {
       />
 
       <div className="pt-4 px-4">
+        {/* 个人信息卡片 */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex items-center gap-6">
             <div className="relative w-24 h-24">
@@ -260,26 +227,25 @@ export default function UserProfilePage() {
           </div>
         </div>
 
+        {/* 博文列表 */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-bold mb-6">Ta的博文</h2>
-          {profile && (
-            <BlogList 
-              isPersonal={false}
-              blogList={blogList.map(blog => ({
-                ...blog,
-                author: {
-                  userId: profile.relationId,
-                  username: profile.username,
-                  avatar: profile.avatar
-                }
-              }))}
-              total={totalBlogs}
-              onPageChange={handlePageChange}
-              onPageSizeChange={handlePageSizeChange}
-              currentPage={currentPage}
-              currentPageSize={pageSize}
-            />
-          )}
+          <BlogList 
+            isPersonal={false}
+            blogList={profile.pageResult?.records.map(blog => ({
+              ...blog,
+              author: {
+                userId: profile.relationId,
+                username: profile.username,
+                avatar: profile.avatar
+              }
+            })) || []}
+            total={profile.pageResult?.total || 0}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            currentPage={page}
+            currentPageSize={pageSize}
+          />
         </div>
       </div>
     </MainLayout>
