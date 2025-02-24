@@ -2,64 +2,64 @@
 
 import { useState } from 'react'
 import MainLayout from '@/app/layouts/MainLayout'
-import CircleExplorer from '@/components/features/circles/CircleExplorer'
+import GroupCategories from '@/components/features/groups/GroupCategories'
+import GroupsList from '@/components/features/groups/GroupsList'
 import MyCircles from '@/components/features/circles/MyCircles'
 import MyPosts from '@/components/features/circles/MyPosts'
 
-type TabType = 'explore' | 'myCircles' | 'myPosts'
-
 export default function GroupsPage() {
-  const [activeTab, setActiveTab] = useState<TabType>('explore')
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'explore':
-        return <CircleExplorer />
-      case 'myCircles':
-        return <MyCircles />
-      case 'myPosts':
-        return <MyPosts />
-      default:
-        return null
-    }
-  }
+  const [selectedType, setSelectedType] = useState('全部')
+  const [activeTab, setActiveTab] = useState('explore') // 'explore', 'myCircles', 'myPosts'
 
   return (
     <MainLayout>
-      <div className="p-4">
-        <div className="flex gap-4 mb-6">
+      <div className="pt-4 px-4 space-y-4">
+        {/* 标签切换 */}
+        <div className="flex gap-4 mb-4">
           <button
             onClick={() => setActiveTab('explore')}
-            className={`px-4 py-2 rounded-full ${
+            className={`px-4 py-2 rounded-lg ${
               activeTab === 'explore'
                 ? 'bg-[#FF8200] text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-white text-gray-600 hover:bg-gray-50'
             }`}
           >
-            探索圈子
+            发现圈子
           </button>
           <button
             onClick={() => setActiveTab('myCircles')}
-            className={`px-4 py-2 rounded-full ${
+            className={`px-4 py-2 rounded-lg ${
               activeTab === 'myCircles'
                 ? 'bg-[#FF8200] text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-white text-gray-600 hover:bg-gray-50'
             }`}
           >
             我的圈子
           </button>
           <button
             onClick={() => setActiveTab('myPosts')}
-            className={`px-4 py-2 rounded-full ${
+            className={`px-4 py-2 rounded-lg ${
               activeTab === 'myPosts'
                 ? 'bg-[#FF8200] text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-white text-gray-600 hover:bg-gray-50'
             }`}
           >
             我的帖子
           </button>
         </div>
-        {renderContent()}
+
+        {/* 内容区域 */}
+        {activeTab === 'explore' && (
+          <>
+            <GroupCategories
+              selectedType={selectedType}
+              onTypeChange={setSelectedType}
+            />
+            <GroupsList selectedType={selectedType} />
+          </>
+        )}
+        {activeTab === 'myCircles' && <MyCircles />}
+        {activeTab === 'myPosts' && <MyPosts />}
       </div>
     </MainLayout>
   )

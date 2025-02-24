@@ -75,35 +75,19 @@ export default function MyPosts() {
   }
 
   return (
-    <div className="relative">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold">我的帖子</h2>
-        <button
-          onClick={() => setShowCreateForm(true)}
-          className="px-4 py-2 bg-[#FF8200] text-white rounded-full hover:bg-[#ff9933]"
-        >
-          创建圈子
-        </button>
-      </div>
-
+    <div className="space-y-4">
       {/* 帖子列表 */}
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4">
         {[1, 2, 3].map((i) => (
           <div key={i} className="bg-white rounded-lg shadow p-4">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
-                <div>
-                  <h3 className="font-bold">帖子标题 {i}</h3>
-                  <p className="text-sm text-gray-500">发布于: 2小时前</p>
-                </div>
+            <h3 className="font-bold mb-2">帖子标题 {i}</h3>
+            <p className="text-gray-600 mb-4">这是帖子的内容描述...</p>
+            <div className="flex justify-between items-center text-sm text-gray-500">
+              <span>发布时间: 2小时前</span>
+              <div className="flex gap-4">
+                <span>点赞: 12</span>
+                <span>评论: 5</span>
               </div>
-              <span className="text-sm text-gray-500">在 示例圈子 中</span>
-            </div>
-            <p className="text-gray-600 mb-4">这是帖子内容的预览...</p>
-            <div className="flex gap-4 text-sm text-gray-500">
-              <span>👍 10</span>
-              <span>💬 5</span>
             </div>
           </div>
         ))}

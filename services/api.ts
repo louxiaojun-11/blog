@@ -347,10 +347,7 @@ export const authService = {
 };
 
 export const uploadService = {
-  uploadFile: async (file: File) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    
+  uploadFile: async (formData: FormData) => {
     try {
       const response = await api.post<ApiResponse<string>>('/upload', formData, {
         headers: {
@@ -528,13 +525,37 @@ export const hobbyService = {
     groupName: string;
     introduce: string;
     avatar: string;
-    category: string;
+    type: string;
   }) => {
     try {
       const response = await api.post<ApiResponse<any>>('/hobby/createGroup', data);
       return response.data;
     } catch (error) {
       console.error('Error creating group:', error);
+      throw error;
+    }
+  },
+
+  // 获取圈子列表（支持按类别查询）
+  getGroupList: async (params: {
+    userId?: number;
+    page: number;
+    pageSize: number;
+    type?: string;
+  }) => {
+    try {
+      const response = await api.get<ApiResponse<{
+        total: number;
+        records: {
+          groupName: string;
+          avatar: string;
+          introduce: string;
+          members: number;
+        }[];
+      }>>('/hobby/groupList', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching group list:', error);
       throw error;
     }
   }

@@ -45,7 +45,8 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
     username: '',
     oldPassword: '',
     newPassword: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    avatar: ''
   })
 
   const [showPasswords, setShowPasswords] = useState({
@@ -63,7 +64,8 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
         username: user.username || '',
         oldPassword: '',
         newPassword: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        avatar: user.avatar || ''
       }))
     }
   }, [showEditModal, user])
@@ -85,7 +87,7 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
     fetchOriginalPassword();
   }, [showEditModal, user?.userId]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       // 验证文件类型
@@ -100,11 +102,26 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
         return
       }
 
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result as string)
+      try {
+        // 创建 FormData 对象
+        const formData = new FormData()
+        // 使用 'file' 作为key，这要与后端 MultipartFile 参数名一致
+        formData.append('file', file)
+        
+        const response = await uploadService.uploadFile(formData)
+        if (response.success) {
+          // 设置头像预览
+          setAvatarPreview(URL.createObjectURL(file))
+          // 更新表单数据中的头像URL
+          setFormData(prev => ({
+            ...prev,
+            avatar: response.data
+          }))
+        }
+      } catch (error) {
+        console.error('Failed to upload avatar:', error)
+        alert('头像上传失败，请重试')
       }
-      reader.readAsDataURL(file)
     }
   }
 
@@ -148,12 +165,9 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
         updateData.password = formData.newPassword
       }
 
-      // 处理头像上传
-      if (fileInputRef.current?.files?.[0]) {
-        const uploadResponse = await uploadService.uploadFile(fileInputRef.current.files[0])
-        if (uploadResponse.success) {
-          updateData.avatar = uploadResponse.data
-        }
+      // 处理头像更新
+      if (formData.avatar) {
+        updateData.avatar = formData.avatar
       }
 
       // 如果没有任何修改，直接返回

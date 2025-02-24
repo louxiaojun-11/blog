@@ -2,26 +2,33 @@
 
 import { Hash, Flame, Users, Star } from 'lucide-react'
 
-export default function GroupCategories() {
-  const categories = [
-    { icon: Hash, label: '全部分类', count: 2451 },
-    { icon: Flame, label: '热门小组', count: 328 },
-    { icon: Users, label: '我的小组', count: 12 },
-    { icon: Star, label: '特别关注', count: 5 },
-  ]
+// 添加分类常量
+const categories = [
+  '全部', '动漫', '阅读', '影视', '科技', '军事', 
+  '时事', '生活', '旅游', '音乐', '美食', '学习', '汽车'
+]
 
+interface GroupCategoriesProps {
+  selectedType: string;
+  onTypeChange: (type: string) => void;
+}
+
+export default function GroupCategories({ selectedType, onTypeChange }: GroupCategoriesProps) {
   return (
     <div className="bg-white rounded-lg shadow p-4">
-      <h2 className="font-bold mb-4">小组分类</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {categories.map(({ icon: Icon, label, count }) => (
+      <h2 className="font-bold mb-2">圈子分类</h2>
+      <div className="grid grid-cols-6 gap-2">
+        {categories.map((type) => (
           <button
-            key={label}
-            className="flex flex-col items-center p-4 rounded-lg hover:bg-gray-50"
+            key={type}
+            onClick={() => onTypeChange(type)}
+            className={`flex items-center justify-center px-3 py-1.5 rounded-lg transition-colors text-sm ${
+              selectedType === type
+                ? 'bg-[#FF8200] text-white'
+                : 'hover:bg-gray-50 text-gray-600'
+            }`}
           >
-            <Icon className="h-6 w-6 text-[#FF8200] mb-2" />
-            <span className="font-medium">{label}</span>
-            <span className="text-sm text-gray-500">{count}</span>
+            {type}
           </button>
         ))}
       </div>
