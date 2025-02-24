@@ -97,4 +97,5 @@ export interface GroupDetail {
   type: string;
   members: number;
   introduce: string;
+  status: number; // 0: 未加入, 1: 已加入
 } 

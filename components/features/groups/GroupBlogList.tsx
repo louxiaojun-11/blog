@@ -79,6 +79,10 @@ export default function GroupBlogList({ groupId }: GroupBlogListProps) {
     return pageNumbers
   }
 
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage)
+  }
+
   if (loading) {
     return <div className="text-center py-8">加载中...</div>
   }
@@ -86,6 +90,8 @@ export default function GroupBlogList({ groupId }: GroupBlogListProps) {
   if (!blogs || blogs.length === 0) {
     return <div className="text-center py-8 text-gray-500">暂无博文</div>
   }
+
+  const totalPages = Math.ceil(totalBlogs / pageSize)
 
   return (
     <div className="space-y-4">
@@ -125,14 +131,14 @@ export default function GroupBlogList({ groupId }: GroupBlogListProps) {
       {totalBlogs > pageSize && (
         <div className="flex justify-center items-center gap-2 mt-6">
           <button
-            onClick={() => setCurrentPage(1)}
+            onClick={() => handlePageChange(1)}
             disabled={currentPage === 1}
             className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50"
           >
             首页
           </button>
           <button
-            onClick={() => setCurrentPage(prev => prev - 1)}
+            onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
             className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50"
           >
@@ -142,7 +148,7 @@ export default function GroupBlogList({ groupId }: GroupBlogListProps) {
           {getPageNumbers().map((pageNum) => (
             <button
               key={pageNum}
-              onClick={() => setCurrentPage(pageNum)}
+              onClick={() => handlePageChange(pageNum)}
               className={`px-3 py-1 rounded border ${
                 pageNum === currentPage
                   ? 'bg-[#FF8200] text-white'
@@ -154,15 +160,15 @@ export default function GroupBlogList({ groupId }: GroupBlogListProps) {
           ))}
           
           <button
-            onClick={() => setCurrentPage(prev => prev + 1)}
-            disabled={currentPage === Math.ceil(totalBlogs / pageSize)}
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
             className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50"
           >
             下一页
           </button>
           <button
-            onClick={() => setCurrentPage(Math.ceil(totalBlogs / pageSize))}
-            disabled={currentPage === Math.ceil(totalBlogs / pageSize)}
+            onClick={() => handlePageChange(totalPages)}
+            disabled={currentPage === totalPages}
             className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50"
           >
             末页

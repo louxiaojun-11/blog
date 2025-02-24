@@ -587,9 +587,9 @@ export const hobbyService = {
   },
 
   // 获取圈子信息
-  getGroupInfo: async (groupId: number) => {
+  getGroupInfo: async (groupId: number, userId: number) => {
     try {
-      const response = await api.get<ApiResponse<GroupDetail>>(`/hobby/groupInfo?groupId=${groupId}`);
+      const response = await api.get<ApiResponse<GroupDetail>>(`/hobby/groupInfo?groupId=${groupId}&userId=${userId}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching group info:', error);
