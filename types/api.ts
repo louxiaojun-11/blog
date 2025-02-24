@@ -88,4 +88,13 @@ export interface Comment {
   username: string;
   avatar: string;
   createdAt: string;
+}
+
+export interface GroupDetail {
+  groupId: number;
+  groupName: string;
+  avatar: string;
+  type: string;
+  members: number;
+  introduce: string;
 } 

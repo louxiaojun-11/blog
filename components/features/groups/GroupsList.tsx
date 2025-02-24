@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Users, MessageSquare } from 'lucide-react'
 import { hobbyService } from '@/services/api'
+import { useRouter } from 'next/navigation'
 
 interface Group {
+  groupId: number;
   groupName: string;
   avatar: string;
   introduce: string;
@@ -13,6 +15,7 @@ interface Group {
 }
 
 export default function GroupsList({ selectedType }: { selectedType: string }) {
+  const router = useRouter()
   const [groups, setGroups] = useState<Group[]>([])
   const [loading, setLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
@@ -89,6 +92,11 @@ export default function GroupsList({ selectedType }: { selectedType: string }) {
     return pageNumbers
   }
 
+  // 修改进入圈子的处理函数
+  const handleEnterGroup = (groupId: number) => {
+    router.push(`/groups/${groupId}`)
+  }
+
   if (loading) {
     return <div className="text-center py-8">加载中...</div>
   }
@@ -105,8 +113,8 @@ export default function GroupsList({ selectedType }: { selectedType: string }) {
     <div className="space-y-4">
       {/* 圈子列表 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {groups.map((group, index) => (
-          <div key={index} className="bg-white rounded-lg shadow overflow-hidden">
+        {groups.map((group) => (
+          <div key={group.groupId} className="bg-white rounded-lg shadow overflow-hidden">
             <div className="h-32 bg-gray-200 relative">
               <Image
                 src={group.avatar}
@@ -120,8 +128,11 @@ export default function GroupsList({ selectedType }: { selectedType: string }) {
               <p className="text-gray-500 text-sm line-clamp-2">{group.introduce}</p>
               <div className="mt-4 flex justify-between items-center">
                 <span className="text-sm text-gray-500">成员: {group.members}</span>
-                <button className="px-4 py-2 rounded-full bg-[#FF8200] text-white hover:bg-[#ff9933]">
-                  加入圈子
+                <button 
+                  onClick={() => handleEnterGroup(group.groupId)}
+                  className="px-4 py-2 rounded-full bg-[#FF8200] text-white hover:bg-[#ff9933]"
+                >
+                  进入圈子
                 </button>
               </div>
             </div>

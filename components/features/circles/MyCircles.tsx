@@ -5,6 +5,7 @@ import { Plus, Upload, X, Check } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { hobbyService, uploadService } from '@/services/api'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 
 // 添加分类常量
 const categories = [
@@ -26,6 +27,7 @@ export default function MyCircles() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showSuccess, setShowSuccess] = useState(false)
+  const router = useRouter()
 
   // 添加圈子列表状态
   const [groups, setGroups] = useState<{
@@ -185,6 +187,11 @@ export default function MyCircles() {
     }
   }
 
+  // 添加进入圈子的处理函数
+  const handleEnterGroup = (groupId: number) => {
+    router.push(`/groups/${groupId}`)
+  }
+
   return (
     <div className="space-y-4">
       {/* 成功提示 */}
@@ -233,8 +240,11 @@ export default function MyCircles() {
                   <p className="text-gray-500 text-sm line-clamp-2">{group.introduce}</p>
                   <div className="mt-4 flex justify-between items-center">
                     <span className="text-sm text-gray-500">成员: {group.members}</span>
-                    <button className="text-[#FF8200] hover:text-[#ff9933]">
-                      管理
+                    <button 
+                      onClick={() => handleEnterGroup(group.groupId)}
+                      className="px-4 py-2 rounded-full bg-[#FF8200] text-white hover:bg-[#ff9933]"
+                    >
+                      进入圈子
                     </button>
                   </div>
                 </div>

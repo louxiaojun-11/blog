@@ -8,7 +8,8 @@ import {
   NewsItem, 
   TrendingTopic, 
   BlogPost,
-  Comment
+  Comment,
+  GroupDetail
 } from '@/types/api';
 import Cookies from 'js-cookie';
 
@@ -547,6 +548,7 @@ export const hobbyService = {
       const response = await api.get<ApiResponse<{
         total: number;
         records: {
+          groupId: number;
           groupName: string;
           avatar: string;
           introduce: string;
@@ -556,6 +558,41 @@ export const hobbyService = {
       return response.data;
     } catch (error) {
       console.error('Error fetching group list:', error);
+      throw error;
+    }
+  },
+
+  // 获取圈子博文列表
+  getGroupBlogList: async ({ groupId, page, pageSize }: { groupId: number; page: number; pageSize: number }) => {
+    try {
+      const response = await api.get<ApiResponse<{
+        total: number;
+        records: {
+          id: number;
+          title: string;
+          content: string;
+          username: string;
+          likes: number;
+          comments: number;
+          createdAt: string;
+        }[];
+      }>>('/hobby/groupBlogList', {
+        params: { groupId, page, pageSize }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching group blog list:', error);
+      throw error;
+    }
+  },
+
+  // 获取圈子信息
+  getGroupInfo: async (groupId: number) => {
+    try {
+      const response = await api.get<ApiResponse<GroupDetail>>(`/hobby/groupInfo?groupId=${groupId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching group info:', error);
       throw error;
     }
   }
