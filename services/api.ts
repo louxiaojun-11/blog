@@ -595,5 +595,95 @@ export const hobbyService = {
       console.error('Error fetching group info:', error);
       throw error;
     }
-  }
+  },
+
+  // 加入圈子
+  joinGroup: async (groupId: number, userId: number) => {
+    try {
+      const response = await api.post<ApiResponse<boolean>>('/hobby/joinGroup', {
+        groupId,
+        userId
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error joining group:', error);
+      throw error;
+    }
+  },
+
+  // 退出圈子
+  quitGroup: async (groupId: number, userId: number) => {
+    try {
+      const response = await api.put<ApiResponse<boolean>>('/hobby/quitGroup', {
+        groupId,
+        userId
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error quitting group:', error);
+      throw error;
+    }
+  },
+
+  // 获取圈子博文详情
+  getGroupBlogDetail: async (blogId: string) => {
+    try {
+      const response = await api.get<ApiResponse<{
+        groupId: string;
+        blogId: string;
+        userId: string;
+        title: string;
+        content: string;
+        pic1: string | null;
+        pic2: string | null;
+        pic3: string | null;
+        pic4: string | null;
+        likes: number;
+        comments: number;
+        createdAt: string;
+      }>>('/hobby/groupBlogDetail', {
+        params: { blogId }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching group blog detail:', error);
+      throw error;
+    }
+  },
+
+  // 获取博主信息
+  getGroupBlogUser: async (userId: string) => {
+    try {
+      const response = await api.get<ApiResponse<{
+        username: string;
+        avatar: string;
+        introduce: string;
+      }>>('/hobby/groupBlogUser', {
+        params: { userId }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching group blog user:', error);
+      throw error;
+    }
+  },
+
+  postHobbyBlog: async (data: {
+    userId: number;
+    groupId: number;
+    title: string;
+    content: string;
+    pic1: string | null;
+    pic2: string | null;
+    pic3: string | null;
+    pic4: string | null;
+  }) => {
+    try {
+      const response = await api.post<ApiResponse<any>>('/hobby/postHobbyBlog', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error posting hobby blog:', error);
+      throw error;
+    }
+  },
 }; 

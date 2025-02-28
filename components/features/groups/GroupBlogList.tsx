@@ -7,6 +7,7 @@ import Link from 'next/link'
 
 interface GroupBlog {
   id: number;
+  blogId: number;
   title: string;
   content: string;
   username: string;
@@ -99,7 +100,7 @@ export default function GroupBlogList({ groupId }: GroupBlogListProps) {
       <div className="bg-white rounded-lg shadow">
         {blogs.map((blog) => (
           <div key={blog.id} className="p-4 border-b last:border-b-0">
-            <Link href={`/blog/${blog.id}`} className="block">
+            <Link href={`/groups/blog/${blog.blogId}`} className="block">
               <h3 className="text-lg font-bold mb-1 hover:text-[#FF8200]">
                 {blog.title}
               </h3>
