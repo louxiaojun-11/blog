@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import MainLayout from '@/app/layouts/MainLayout'
 import GroupCategories from '@/components/features/groups/GroupCategories'
 import GroupsList from '@/components/features/groups/GroupsList'
@@ -8,8 +9,17 @@ import MyCircles from '@/components/features/circles/MyCircles'
 import MyPosts from '@/components/features/circles/MyPosts'
 
 export default function GroupsPage() {
+  const searchParams = useSearchParams()
   const [selectedType, setSelectedType] = useState('全部')
-  const [activeTab, setActiveTab] = useState('explore') // 'explore', 'myCircles', 'myPosts'
+  const [activeTab, setActiveTab] = useState(searchParams.get('activeTab') || 'explore')
+  const initialPage = searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1
+
+  useEffect(() => {
+    const tab = searchParams.get('activeTab')
+    if (tab) {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
 
   return (
     <MainLayout>
@@ -59,7 +69,7 @@ export default function GroupsPage() {
           </>
         )}
         {activeTab === 'myCircles' && <MyCircles />}
-        {activeTab === 'myPosts' && <MyPosts />}
+        {activeTab === 'myPosts' && <MyPosts initialPage={initialPage} />}
       </div>
     </MainLayout>
   )

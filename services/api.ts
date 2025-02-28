@@ -686,4 +686,76 @@ export const hobbyService = {
       throw error;
     }
   },
+
+  clickLike: async (data: { userId: number; blogId: number }) => {
+    try {
+      const response = await api.post<ApiResponse<number>>('/hobby/clickLike', data)
+      return response.data
+    } catch (error) {
+      console.error('Error clicking like:', error)
+      throw error
+    }
+  },
+
+  removeLike: async (data: { userId: number; blogId: number }) => {
+    try {
+      const response = await api.put<ApiResponse<void>>('/hobby/removeLike', data)
+      return response.data
+    } catch (error) {
+      console.error('Error removing like:', error)
+      throw error
+    }
+  },
+
+  getComments: async (blogId: number, page: number = 1, pageSize: number = 6) => {
+    try {
+      const response = await api.get<ApiResponse<{
+        total: number;
+        records: Comment[];
+      }>>(`/hobby/commentList?blogId=${blogId}&page=${page}&pageSize=${pageSize}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      throw error;
+    }
+  },
+
+  addComment: async (data: {
+    userId: number;
+    blogId: number;
+    content: string;
+  }) => {
+    try {
+      const response = await api.post<ApiResponse<Comment>>('/hobby/addComment', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      throw error;
+    }
+  },
+
+  getUserHobbyBlogList: async (userId: number, page: number, pageSize: number) => {
+    try {
+      const response = await api.get<ApiResponse<{
+        total: number;
+        records: {
+          userId: number;
+          groupId: number;
+          blogId: number;
+          groupName: string;
+          title: string;
+          content: string;
+          likes: number;
+          comments: number;
+          createdAt: string;
+          type: string;
+        }[];
+      }>>(`/hobby/userHobbyBlogList?userId=${userId}&page=${page}&pageSize=${pageSize}`)
+      console.log('Raw API response:', response.data) // 添加调试日志
+      return response.data
+    } catch (error) {
+      console.error('Error fetching user hobby blog list:', error)
+      throw error
+    }
+  },
 }; 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import MainLayout from '@/app/layouts/MainLayout'
@@ -22,6 +22,8 @@ interface GroupDetail {
 
 export default function GroupDetailPage() {
   const params = useParams()
+  const searchParams = useSearchParams()
+  const initialPage = searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1
   const groupId = Number(params.id)
   const [groupInfo, setGroupInfo] = useState<GroupDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -142,7 +144,7 @@ export default function GroupDetailPage() {
       <div className="pt-4 px-4 flex gap-6">
         {/* 左侧博文列表 */}
         <div className="flex-1">
-          <GroupBlogList groupId={groupId} />
+          <GroupBlogList groupId={groupId} initialPage={initialPage} />
         </div>
 
         {/* 右侧圈子信息 */}

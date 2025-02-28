@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Heart, MessageCircle } from 'lucide-react'
 import { hobbyService } from '@/services/api'
 import Link from 'next/link'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface GroupBlog {
   id: number;
@@ -18,16 +19,22 @@ interface GroupBlog {
 
 interface GroupBlogListProps {
   groupId: number;
+  initialPage?: number;
 }
 
-export default function GroupBlogList({ groupId }: GroupBlogListProps) {
+export default function GroupBlogList({ groupId, initialPage = 1 }: GroupBlogListProps) {
   const [blogs, setBlogs] = useState<GroupBlog[]>([])
   const [loading, setLoading] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
+  const [currentPage, setCurrentPage] = useState(initialPage)
   const [totalBlogs, setTotalBlogs] = useState(0)
+  const [showUnlikeConfirm, setShowUnlikeConfirm] = useState(false)
+  const [selectedBlogId, setSelectedBlogId] = useState<number | null>(null)
   const pageSize = 10
+  const { user } = useAuth()
 
   useEffect(() => {
+    let mounted = true
+
     const fetchGroupBlogs = async () => {
       try {
         setLoading(true)
@@ -37,18 +44,24 @@ export default function GroupBlogList({ groupId }: GroupBlogListProps) {
           pageSize
         })
 
-        if (response.success) {
+        if (mounted && response.success) {
           setBlogs(response.data.records)
           setTotalBlogs(response.data.total)
         }
       } catch (error) {
         console.error('Failed to fetch group blogs:', error)
       } finally {
-        setLoading(false)
+        if (mounted) {
+          setLoading(false)
+        }
       }
     }
 
     fetchGroupBlogs()
+
+    return () => {
+      mounted = false
+    }
   }, [currentPage, groupId])
 
   // 生成页码数组
@@ -84,6 +97,63 @@ export default function GroupBlogList({ groupId }: GroupBlogListProps) {
     setCurrentPage(newPage)
   }
 
+  const handleLikeClick = async (blogId: number) => {
+    if (!user?.userId) return
+
+    try {
+      const response = await hobbyService.clickLike({
+        userId: user.userId,
+        blogId: blogId
+      })
+
+      if (response.success) {
+        if (response.data === 0) {
+          // 未点赞，执行点赞操作
+          const updatedBlogs = blogs.map(blog => {
+            if (blog.blogId === blogId) {
+              return { ...blog, likes: blog.likes + 1 }
+            }
+            return blog
+          })
+          setBlogs(updatedBlogs)
+        } else {
+          // 已点赞，显示取消确认
+          setSelectedBlogId(blogId)
+          setShowUnlikeConfirm(true)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to handle like:', error)
+    }
+  }
+
+  const handleUnlike = async () => {
+    if (!user?.userId || !selectedBlogId) return
+
+    try {
+      const response = await hobbyService.removeLike({
+        userId: user.userId,
+        blogId: selectedBlogId
+      })
+
+      if (response.success) {
+        // 更新点赞数
+        const updatedBlogs = blogs.map(blog => {
+          if (blog.blogId === selectedBlogId) {
+            return { ...blog, likes: blog.likes - 1 }
+          }
+          return blog
+        })
+        setBlogs(updatedBlogs)
+      }
+    } catch (error) {
+      console.error('Failed to remove like:', error)
+    } finally {
+      setShowUnlikeConfirm(false)
+      setSelectedBlogId(null)
+    }
+  }
+
   if (loading) {
     return <div className="text-center py-8">加载中...</div>
   }
@@ -96,11 +166,38 @@ export default function GroupBlogList({ groupId }: GroupBlogListProps) {
 
   return (
     <div className="space-y-4">
+      {/* 取消点赞确认弹窗 */}
+      {showUnlikeConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-[300px]">
+            <h3 className="text-lg font-bold mb-4">取消点赞</h3>
+            <p className="text-gray-600 mb-6">确定要取消对这条博文的点赞吗？</p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => {
+                  setShowUnlikeConfirm(false)
+                  setSelectedBlogId(null)
+                }}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleUnlike}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                确定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 博文列表 */}
       <div className="bg-white rounded-lg shadow">
         {blogs.map((blog) => (
           <div key={blog.id} className="p-4 border-b last:border-b-0">
-            <Link href={`/groups/blog/${blog.blogId}`} className="block">
+            <Link href={`/groups/blog/${blog.blogId}?source=group&page=${currentPage}`} className="block">
               <h3 className="text-lg font-bold mb-1 hover:text-[#FF8200]">
                 {blog.title}
               </h3>
@@ -114,10 +211,16 @@ export default function GroupBlogList({ groupId }: GroupBlogListProps) {
                 <span>{blog.createdAt}</span>
               </div>
               <div className="flex items-center gap-4 text-gray-500">
-                <span className="flex items-center gap-1">
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault()
+                    handleLikeClick(blog.blogId)
+                  }}
+                  className="flex items-center gap-1 hover:text-[#FF8200]"
+                >
                   <Heart className="w-4 h-4" />
                   {blog.likes}
-                </span>
+                </button>
                 <span className="flex items-center gap-1">
                   <MessageCircle className="w-4 h-4" />
                   {blog.comments}

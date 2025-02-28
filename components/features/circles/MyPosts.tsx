@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { hobbyService } from '@/services/api'
 import { Upload, X } from 'lucide-react'
@@ -11,8 +12,31 @@ const categories = [
   '时事', '生活', '旅游', '音乐', '美食', '学习', '汽车'
 ]
 
-export default function MyPosts() {
+interface HobbyBlogPost {
+  userId: number;
+  groupId: number;
+  blogId: number;
+  groupName: string;
+  title: string;
+  content: string;
+  likes: number;
+  comments: number;
+  createdAt: string;
+  type: string;
+}
+
+interface MyPostsProps {
+  initialPage?: number;
+}
+
+export default function MyPosts({ initialPage = 1 }: MyPostsProps) {
+  const router = useRouter()
   const { user } = useAuth()
+  const [posts, setPosts] = useState<HobbyBlogPost[]>([])
+  const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(initialPage)
+  const [total, setTotal] = useState(0)
+  const pageSize = 10
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [groupName, setGroupName] = useState('')
   const [introduce, setIntroduce] = useState('')
@@ -20,6 +44,67 @@ export default function MyPosts() {
   const [category, setCategory] = useState(categories[0])
   const [submitting, setSubmitting] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string>('')
+
+  useEffect(() => {
+    if (user?.userId) {
+      fetchUserPosts(currentPage)
+    }
+  }, [user?.userId, currentPage])
+
+  const fetchUserPosts = async (page: number) => {
+    try {
+      setLoading(true)
+      const response = await hobbyService.getUserHobbyBlogList(user!.userId, page, pageSize)
+      console.log('Response from API:', response)
+      if (response.success && response.data && Array.isArray(response.data.records)) {
+        setPosts(response.data.records)
+        setTotal(response.data.total)
+      } else {
+        console.error('Unexpected response format:', response)
+        setPosts([])
+        setTotal(0)
+      }
+    } catch (error) {
+      console.error('Failed to fetch user posts:', error)
+      setPosts([])
+      setTotal(0)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePostClick = (blogId: number) => {
+    router.push(`/groups/blog/${blogId}?source=myposts&page=${currentPage}`)
+  }
+
+  // 生成页码数组
+  const getPageNumbers = () => {
+    const totalPages = Math.ceil(total / pageSize)
+    const pageNumbers = []
+    const maxVisiblePages = 5
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i)
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 5; i++) {
+          pageNumbers.push(i)
+        }
+      } else if (currentPage >= totalPages - 2) {
+        for (let i = totalPages - 4; i <= totalPages; i++) {
+          pageNumbers.push(i)
+        }
+      } else {
+        for (let i = currentPage - 2; i <= currentPage + 2; i++) {
+          pageNumbers.push(i)
+        }
+      }
+    }
+
+    return pageNumbers
+  }
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -74,24 +159,98 @@ export default function MyPosts() {
     }
   }
 
+  if (loading) {
+    return <div className="text-center py-8">加载中...</div>
+  }
+
+  if (!posts || posts.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        暂无发布的博文
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
-      {/* 帖子列表 */}
+      {/* 博文列表 */}
       <div className="grid grid-cols-1 gap-4">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="bg-white rounded-lg shadow p-4">
-            <h3 className="font-bold mb-2">帖子标题 {i}</h3>
-            <p className="text-gray-600 mb-4">这是帖子的内容描述...</p>
-            <div className="flex justify-between items-center text-sm text-gray-500">
-              <span>发布时间: 2小时前</span>
-              <div className="flex gap-4">
-                <span>点赞: 12</span>
-                <span>评论: 5</span>
+        {posts.map((post) => (
+          <div 
+            key={post.blogId} 
+            className="bg-white rounded-lg shadow p-4 cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => handlePostClick(post.blogId)}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-bold text-lg hover:text-[#FF8200]">{post.title}</h3>
+              <span className="text-sm text-[#FF8200] px-2 py-1 bg-orange-50 rounded-full">
+                {post.type}
+              </span>
+            </div>
+            <p className="text-gray-600 mb-3 line-clamp-1">{post.content}</p>
+            <div className="flex justify-between items-center text-sm">
+              <div className="text-gray-500">
+                <span>发布于 </span>
+                <span className="text-[#FF8200]">{post.groupName}</span>
+                <span> · {post.createdAt}</span>
+              </div>
+              <div className="flex gap-4 text-gray-500">
+                <span>点赞 {post.likes}</span>
+                <span>评论 {post.comments}</span>
               </div>
             </div>
           </div>
         ))}
       </div>
+
+      {/* 分页控件 */}
+      {total > pageSize && (
+        <div className="flex justify-center items-center gap-2 mt-6">
+          <button
+            onClick={() => setCurrentPage(1)}
+            disabled={currentPage === 1}
+            className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50"
+          >
+            首页
+          </button>
+          <button
+            onClick={() => setCurrentPage(prev => prev - 1)}
+            disabled={currentPage === 1}
+            className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50"
+          >
+            上一页
+          </button>
+          
+          {getPageNumbers().map(pageNum => (
+            <button
+              key={pageNum}
+              onClick={() => setCurrentPage(pageNum)}
+              className={`px-3 py-1 rounded border ${
+                pageNum === currentPage
+                  ? 'bg-[#FF8200] text-white'
+                  : 'hover:bg-gray-50'
+              }`}
+            >
+              {pageNum}
+            </button>
+          ))}
+          
+          <button
+            onClick={() => setCurrentPage(prev => prev + 1)}
+            disabled={currentPage === Math.ceil(total / pageSize)}
+            className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50"
+          >
+            下一页
+          </button>
+          <button
+            onClick={() => setCurrentPage(Math.ceil(total / pageSize))}
+            disabled={currentPage === Math.ceil(total / pageSize)}
+            className="px-3 py-1 rounded border hover:bg-gray-50 disabled:opacity-50"
+          >
+            末页
+          </button>
+        </div>
+      )}
 
       {/* 创建圈子表单 */}
       {showCreateForm && (
