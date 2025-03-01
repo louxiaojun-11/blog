@@ -315,7 +315,14 @@ export const blogService = {
   }
 };
 
-// 添加登录服务
+interface RegisterData {
+  username: string;
+  account: string;
+  password: string;
+  avatar: string;
+  introduce: string;
+}
+
 export const authService = {
   login: async (account: string, password: string) => {
     console.log('Sending login request with:', { account, password });
@@ -342,6 +349,21 @@ export const authService = {
       return response.data;
     } catch (error) {
       console.error('Login request error:', error);
+      throw error;
+    }
+  },
+
+  register: async (data: {
+    username: string;
+    account: string;
+    password: string;
+    introduce: string;
+  }) => {
+    try {
+      const response = await api.post('/user/register', data);
+      return response.data;
+    } catch (error) {
+      console.error('Register error:', error);
       throw error;
     }
   }
