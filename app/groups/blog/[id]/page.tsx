@@ -9,6 +9,7 @@ import { Heart, MessageCircle, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import HobbyCommentList from '@/components/features/hobby/HobbyCommentList'
+import { userService } from '@/services/api'
 
 interface BlogDetail {
   groupId: string;
@@ -135,6 +136,27 @@ export default function GroupBlogDetailPage() {
     }
   }
 
+  // 添加跳转到用户主页的函数
+  const handleUserProfileClick = async () => {
+    if (!blogDetail?.userId) return
+
+    try {
+      // 使用userService中的getUserRelationProfile方法
+      const response = await userService.getUserRelationProfile(Number(blogDetail.userId))
+      
+      if (response.success) {
+        // 将用户资料存储到 sessionStorage，与个人主页保持一致
+        sessionStorage.setItem('visitedProfile', JSON.stringify(response.data))
+        // 跳转到用户主页，使用relationId作为参数
+        router.push(`/relation/profile?relationId=${blogDetail.userId}`)
+      } else {
+        console.error('Failed to fetch user profile:', response.message)
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error)
+    }
+  }
+
   if (loading) {
     return (
       <MainLayout>
@@ -163,58 +185,40 @@ export default function GroupBlogDetailPage() {
   return (
     <MainLayout>
       <div className="pt-4 px-4">
-        {/* 添加返回按钮 */}
-        <div className="mb-4">
+        <div className="max-w-4xl mx-auto">
           <button
             onClick={handleBack}
-            className="flex items-center gap-2 text-gray-600 hover:text-[#FF8200]"
+            className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
-            <span>返回{source === 'myposts' ? '我的帖子' : '上一页'}</span>
+            <ArrowLeft className="h-5 w-5" />
+            返回
           </button>
-        </div>
 
-        {/* 取消点赞确认弹窗 */}
-        {showUnlikeConfirm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-[300px]">
-              <h3 className="text-lg font-bold mb-4">取消点赞</h3>
-              <p className="text-gray-600 mb-6">确定要取消对这条博文的点赞吗？</p>
-              <div className="flex justify-end gap-4">
-                <button
-                  onClick={() => setShowUnlikeConfirm(false)}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
-                >
-                  取消
-                </button>
-                <button
-                  onClick={handleUnlike}
-                  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                >
-                  确定
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="pt-4 px-4 flex gap-6">
-          {/* 左侧博文内容 */}
-          <div className="flex-1">
-            <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex gap-6">
+            {/* 左侧博文内容 */}
+            <div className="flex-1 bg-white rounded-lg shadow p-6">
               <h1 className="text-2xl font-bold mb-4">{blogDetail.title}</h1>
+              {/* 添加作者头像点击事件 */}
               <div className="flex items-center gap-3 mb-6">
-                <Image
-                  src={userInfo.avatar}
-                  alt={userInfo.username}
-                  width={40}
-                  height={40}
-                  className="rounded-full"
-                />
+                <div 
+                  onClick={handleUserProfileClick}
+                  className="cursor-pointer"
+                >
+                  <Image
+                    src={userInfo.avatar}
+                    alt={userInfo.username}
+                    width={40}
+                    height={40}
+                    className="rounded-full hover:opacity-80 transition-opacity"
+                  />
+                </div>
                 <div>
-                  <p className="font-medium">{userInfo.username}</p>
+                  <p 
+                    className="font-medium hover:text-[#FF8200] cursor-pointer"
+                    onClick={handleUserProfileClick}
+                  >
+                    {userInfo.username}
+                  </p>
                   <p className="text-sm text-gray-500">{blogDetail.createdAt}</p>
                 </div>
               </div>
@@ -258,32 +262,37 @@ export default function GroupBlogDetailPage() {
                 </button>
               </div>
             </div>
-          </div>
 
-          {/* 右侧博主信息 */}
-          <div className="w-80">
-            <div className="bg-white rounded-lg shadow p-4 sticky top-20">
-              <div className="flex items-center gap-4 mb-4">
-                <Image
-                  src={userInfo.avatar}
-                  alt={userInfo.username}
-                  width={64}
-                  height={64}
-                  className="rounded-full"
-                />
-                <div>
-                  <h2 className="font-bold text-lg">{userInfo.username}</h2>
-                  <Link 
-                    href={`/groups/${blogDetail.groupId}`}
-                    className="text-sm text-[#FF8200] hover:underline"
+            {/* 右侧作者信息 */}
+            <div className="w-80">
+              <div className="bg-white rounded-lg shadow p-6">
+                <div className="flex flex-col items-center">
+                  {/* 头像可点击区域 */}
+                  <div 
+                    onClick={handleUserProfileClick}
+                    className="cursor-pointer w-20 h-20 relative mb-3"
                   >
-                    返回圈子
-                  </Link>
+                    <Image
+                      src={userInfo.avatar}
+                      alt={userInfo.username}
+                      fill
+                      className="rounded-full hover:opacity-80 transition-opacity object-cover"
+                    />
+                  </div>
+                  {/* 用户名可点击区域 */}
+                  <h3 
+                    onClick={handleUserProfileClick}
+                    className="font-bold text-lg hover:text-[#FF8200] cursor-pointer"
+                  >
+                    {userInfo.username}
+                  </h3>
+                  {userInfo.introduce && (
+                    <p className="text-gray-500 text-sm mt-3 text-center">
+                      {userInfo.introduce}
+                    </p>
+                  )}
                 </div>
               </div>
-              <p className="text-gray-600 text-sm">
-                {userInfo.introduce || '这个人很懒，什么都没写~'}
-              </p>
             </div>
           </div>
         </div>

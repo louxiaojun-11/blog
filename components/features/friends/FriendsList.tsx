@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { MessageCircle, UserMinus } from 'lucide-react'
 import { Friend } from '@/types/api'
-import { friendService } from '@/services/api'
+import { friendService, userService } from '@/services/api'
+import { useRouter } from 'next/navigation'
 
 export default function FriendsList() {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const loadFriends = async () => {
@@ -34,6 +36,21 @@ export default function FriendsList() {
     loadFriends();
   }, []);
 
+  const handleUserProfileClick = async (userId: number) => {
+    try {
+      const response = await userService.getUserRelationProfile(userId)
+      
+      if (response.success) {
+        sessionStorage.setItem('visitedProfile', JSON.stringify(response.data))
+        router.push(`/relation/profile?relationId=${userId}`)
+      } else {
+        console.error('Failed to fetch user profile:', response.message)
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error)
+    }
+  }
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
@@ -46,15 +63,25 @@ export default function FriendsList() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
         {friends.map((friend) => (
           <div key={friend.userId} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50">
-            <Image
-              src={friend.avatar}
-              alt={friend.username}
-              width={64}
-              height={64}
-              className="rounded-full"
-            />
+            <div 
+              onClick={() => handleUserProfileClick(friend.userId)}
+              className="cursor-pointer"
+            >
+              <Image
+                src={friend.avatar}
+                alt={friend.username}
+                width={64}
+                height={64}
+                className="rounded-full hover:opacity-80 transition-opacity"
+              />
+            </div>
             <div className="flex-1">
-              <h3 className="font-medium">{friend.username}</h3>
+              <h3 
+                onClick={() => handleUserProfileClick(friend.userId)}
+                className="font-medium hover:text-[#FF8200] cursor-pointer"
+              >
+                {friend.username}
+              </h3>
               <p className="text-sm text-gray-500">
                 {friend.status === 'online' ? (
                   <span className="text-green-500">● 在线</span>

@@ -780,4 +780,30 @@ export const hobbyService = {
       throw error
     }
   },
+};
+
+interface MusicItem {
+  musicId: number;
+  musicUrl: string;
+  musicName: string;
+  createdAt: string;
+}
+
+export const musicService = {
+  getUserMusic: async (params: {
+    userId: number;
+    page: number;
+    pageSize: number;
+  }) => {
+    try {
+      const response = await api.get<ApiResponse<{
+        total: number;
+        records: MusicItem[];
+      }>>('/user/musicList', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching music list:', error);
+      throw error;
+    }
+  }
 }; 
