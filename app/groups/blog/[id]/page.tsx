@@ -65,7 +65,7 @@ export default function GroupBlogDetailPage() {
       try {
         setLoading(true)
         // 获取博文详情
-        const blogResponse = await hobbyService.getGroupBlogDetail(String(params.id))
+        const blogResponse = await hobbyService.getGroupBlogDetail(params.id)
         if (blogResponse.success) {
           setBlogDetail(blogResponse.data)
           
@@ -139,13 +139,6 @@ export default function GroupBlogDetailPage() {
   // 添加跳转到用户主页的函数
   const handleUserProfileClick = async () => {
     if (!blogDetail?.userId) return
-    
-    // 检查是否是当前登录用户发的圈文
-    if (user?.userId === Number(blogDetail.userId)) {
-      // 如果是当前用户自己发的圈文，不跳转
-      console.log('这是您自己发布的圈文')
-      return
-    }
 
     try {
       // 使用userService中的getUserRelationProfile方法
@@ -209,20 +202,20 @@ export default function GroupBlogDetailPage() {
               <div className="flex items-center gap-3 mb-6">
                 <div 
                   onClick={handleUserProfileClick}
-                  className={`${user?.userId === Number(blogDetail.userId) ? '' : 'cursor-pointer'}`}
+                  className="cursor-pointer"
                 >
                   <Image
                     src={userInfo.avatar}
                     alt={userInfo.username}
                     width={40}
                     height={40}
-                    className={`rounded-full ${user?.userId === Number(blogDetail.userId) ? '' : 'hover:opacity-80 transition-opacity'}`}
+                    className="rounded-full hover:opacity-80 transition-opacity"
                   />
                 </div>
                 <div>
                   <p 
+                    className="font-medium hover:text-[#FF8200] cursor-pointer"
                     onClick={handleUserProfileClick}
-                    className={`font-medium ${user?.userId === Number(blogDetail.userId) ? '' : 'hover:text-[#FF8200] cursor-pointer'}`}
                   >
                     {userInfo.username}
                   </p>
@@ -275,47 +268,24 @@ export default function GroupBlogDetailPage() {
               <div className="bg-white rounded-lg shadow p-6">
                 <div className="flex flex-col items-center">
                   {/* 头像可点击区域 */}
-                  {user?.userId === Number(blogDetail.userId) ? (
-                    // 如果是自己发的文章，不添加点击事件
-                    <div className="w-20 h-20 relative mb-3">
-                      <Image
-                        src={userInfo.avatar}
-                        alt={userInfo.username}
-                        fill
-                        className="rounded-full object-cover"
-                      />
-                    </div>
-                  ) : (
-                    // 如果是别人的文章，添加点击事件和悬停效果
-                    <div 
-                      onClick={handleUserProfileClick}
-                      className="w-20 h-20 relative mb-3 cursor-pointer"
-                    >
-                      <Image
-                        src={userInfo.avatar}
-                        alt={userInfo.username}
-                        fill
-                        className="rounded-full hover:opacity-80 transition-opacity object-cover"
-                      />
-                    </div>
-                  )}
-                  
+                  <div 
+                    onClick={handleUserProfileClick}
+                    className="cursor-pointer w-20 h-20 relative mb-3"
+                  >
+                    <Image
+                      src={userInfo.avatar}
+                      alt={userInfo.username}
+                      fill
+                      className="rounded-full hover:opacity-80 transition-opacity object-cover"
+                    />
+                  </div>
                   {/* 用户名可点击区域 */}
-                  {user?.userId === Number(blogDetail.userId) ? (
-                    // 如果是自己发的文章，不添加点击事件
-                    <h3 className="font-bold text-lg">
-                      {userInfo.username}
-                    </h3>
-                  ) : (
-                    // 如果是别人的文章，添加点击事件和悬停效果
-                    <h3 
-                      onClick={handleUserProfileClick}
-                      className="font-bold text-lg hover:text-[#FF8200] cursor-pointer"
-                    >
-                      {userInfo.username}
-                    </h3>
-                  )}
-                  
+                  <h3 
+                    onClick={handleUserProfileClick}
+                    className="font-bold text-lg hover:text-[#FF8200] cursor-pointer"
+                  >
+                    {userInfo.username}
+                  </h3>
                   {userInfo.introduce && (
                     <p className="text-gray-500 text-sm mt-3 text-center">
                       {userInfo.introduce}

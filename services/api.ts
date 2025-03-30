@@ -805,19 +805,5 @@ export const musicService = {
       console.error('Error fetching music list:', error);
       throw error;
     }
-  },
-
-  uploadMusic: async (formData: FormData) => {
-    try {
-      const response = await api.post<ApiResponse<string>>('/uploadMusic', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error uploading music:', error);
-      throw error;
-    }
   }
 }; 
