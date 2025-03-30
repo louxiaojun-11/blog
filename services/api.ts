@@ -805,5 +805,24 @@ export const musicService = {
       console.error('Error fetching music list:', error);
       throw error;
     }
+  },
+  
+  // 上传音乐文件，后端会自动保存到数据库
+  uploadMusic: async (musicFile: FormData) => {
+    try {
+      const response = await api.post<ApiResponse<{
+        musicUrl: string;
+        musicName: string;
+      }>>('/uploadMusic', musicFile, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        baseURL: 'http://localhost:8080/api'
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error uploading music file:', error);
+      throw error;
+    }
   }
 }; 

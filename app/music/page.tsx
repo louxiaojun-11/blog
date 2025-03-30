@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { musicService } from '@/services/api'
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX } from 'lucide-react'
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Upload, X, Check } from 'lucide-react'
 import MainLayout from '@/app/layouts/MainLayout'
 
 interface MusicItem {
@@ -24,6 +24,10 @@ export default function MusicPage() {
   const [volume, setVolume] = useState(1)
   const [isMuted, setIsMuted] = useState(false)
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null)
+  const [uploadLoading, setUploadLoading] = useState(false)
+  const [uploadSuccess, setUploadSuccess] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (user?.userId) {
@@ -67,6 +71,75 @@ export default function MusicPage() {
       console.error('Failed to fetch music list:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // 处理音乐上传
+  const handleUploadClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    }
+  }
+
+  const validateAudioFile = (file: File): boolean => {
+    const allowedTypes = ['audio/mp3', 'audio/wav', 'audio/ogg', 'audio/flac', 'audio/mpeg']
+    const maxSize = 20 * 1024 * 1024 // 20MB
+    
+    if (!allowedTypes.includes(file.type)) {
+      setUploadError('不支持的文件类型，仅支持: mp3, wav, ogg, flac')
+      return false
+    }
+    
+    if (file.size > maxSize) {
+      setUploadError('文件大小不能超过20MB')
+      return false
+    }
+    
+    return true
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    // 重置状态
+    setUploadError('')
+    setUploadSuccess(false)
+    
+    // 验证文件
+    if (!validateAudioFile(file)) return
+    
+    try {
+      setUploadLoading(true)
+      
+      // 创建FormData对象
+      const formData = new FormData()
+      formData.append('file', file)
+      
+      // 上传音乐文件，后端会自动保存到数据库
+      const response = await musicService.uploadMusic(formData)
+      
+      if (response.success) {
+        setUploadSuccess(true)
+        // 重新获取音乐列表
+        await fetchMusicList()
+        
+        // 3秒后隐藏成功提示
+        setTimeout(() => {
+          setUploadSuccess(false)
+        }, 3000)
+      } else {
+        setUploadError(response.message || '上传失败')
+      }
+    } catch (error) {
+      console.error('上传音乐失败:', error)
+      setUploadError('上传音乐失败，请重试')
+    } finally {
+      setUploadLoading(false)
+      // 清空文件输入
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
     }
   }
 
@@ -169,6 +242,41 @@ export default function MusicPage() {
     <MainLayout>
       <div className="max-w-3xl mx-auto mt-8">
         <div className="bg-white rounded-lg shadow-lg p-6">
+          {/* 上传音乐按钮 */}
+          <div className="flex justify-end mb-4">
+            <input
+              type="file"
+              accept=".mp3,.wav,.ogg,.flac,audio/mp3,audio/wav,audio/ogg,audio/flac,audio/mpeg"
+              onChange={handleFileChange}
+              className="hidden"
+              ref={fileInputRef}
+              disabled={uploadLoading}
+            />
+            <button
+              onClick={handleUploadClick}
+              disabled={uploadLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-[#FF8200] text-white rounded-full hover:bg-[#ff9933] disabled:opacity-70"
+            >
+              <Upload className="w-4 h-4" />
+              {uploadLoading ? '上传中...' : '上传音乐'}
+            </button>
+          </div>
+          
+          {/* 上传状态提示 */}
+          {uploadError && (
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg flex items-center gap-2">
+              <X className="w-4 h-4" />
+              <span>{uploadError}</span>
+            </div>
+          )}
+          
+          {uploadSuccess && (
+            <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded-lg flex items-center gap-2">
+              <Check className="w-4 h-4" />
+              <span>音乐上传成功！</span>
+            </div>
+          )}
+
           {/* 当前播放信息 */}
           <div className="text-center mb-6">
             <h2 className="text-xl font-bold mb-2">
@@ -242,30 +350,36 @@ export default function MusicPage() {
 
           {/* 音乐列表 */}
           <div className="mt-8">
-            <h3 className="font-medium mb-4">播放列表</h3>
-            <div className="space-y-2">
-              {musicList.map((track) => (
-                <div
-                  key={track.musicId}
-                  onClick={() => handlePlay(track)}
-                  className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-gray-50 ${
-                    currentTrack?.musicId === track.musicId ? 'bg-gray-50 text-[#FF8200]' : ''
-                  }`}
-                >
-                  <div className="w-8 h-8 flex items-center justify-center">
-                    {currentTrack?.musicId === track.musicId && isPlaying ? (
-                      <Pause className="w-5 h-5" />
-                    ) : (
-                      <Play className="w-5 h-5" />
-                    )}
+            <h3 className="font-medium mb-4">播放列表 ({musicList.length})</h3>
+            {musicList.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">
+                暂无音乐，请上传音乐文件
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {musicList.map((track) => (
+                  <div
+                    key={track.musicId}
+                    onClick={() => handlePlay(track)}
+                    className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-gray-50 ${
+                      currentTrack?.musicId === track.musicId ? 'bg-gray-50 text-[#FF8200]' : ''
+                    }`}
+                  >
+                    <div className="w-8 h-8 flex items-center justify-center">
+                      {currentTrack?.musicId === track.musicId && isPlaying ? (
+                        <Pause className="w-5 h-5" />
+                      ) : (
+                        <Play className="w-5 h-5" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium">{track.musicName}</div>
+                      <div className="text-sm text-gray-500">{track.createdAt}</div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <div className="font-medium">{track.musicName}</div>
-                    <div className="text-sm text-gray-500">{track.createdAt}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
