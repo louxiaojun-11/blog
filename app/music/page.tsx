@@ -37,6 +37,8 @@ export default function MusicPage() {
   const progressBarRef = useRef<HTMLDivElement>(null)
   const [isBuffering, setIsBuffering] = useState(false)
   const [loadingTrack, setLoadingTrack] = useState<MusicItem | null>(null)
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const [debug, setDebug] = useState(false)
 
   useEffect(() => {
     if (user?.userId) {
@@ -67,35 +69,57 @@ export default function MusicPage() {
     const audioInstance = new Audio()
     setAudio(audioInstance)
 
+    // 特别提高这个事件的优先级，确保它能正常工作
+    const onTimeUpdate = () => {
+      const newTime = audioInstance.currentTime
+      setCurrentTime(newTime)
+      if (debug) {
+        console.log('Native timeupdate event:', newTime)
+      }
+    }
+
     // 监听音频事件
-    audioInstance.addEventListener('timeupdate', handleTimeUpdate)
-    audioInstance.addEventListener('loadedmetadata', handleLoadMetadata)
-    audioInstance.addEventListener('ended', handleTrackEnd)
-    audioInstance.addEventListener('waiting', handleWaiting)
-    audioInstance.addEventListener('canplay', handleCanPlay)
+    const handleLoadMetadataEvent = () => handleLoadMetadata()
+    const handleTrackEndEvent = () => handleTrackEnd()
+    const handleWaitingEvent = () => handleWaiting()
+    const handleCanPlayEvent = () => handleCanPlay()
+    
+    audioInstance.addEventListener('timeupdate', onTimeUpdate)
+    audioInstance.addEventListener('loadedmetadata', handleLoadMetadataEvent)
+    audioInstance.addEventListener('ended', handleTrackEndEvent)
+    audioInstance.addEventListener('waiting', handleWaitingEvent)
+    audioInstance.addEventListener('canplay', handleCanPlayEvent)
     
     // 调试日志
     console.log('Audio instance created')
 
     // 添加加载错误监听
-    audioInstance.addEventListener('error', (e) => {
+    const handleError = (e: Event) => {
       console.error('Audio loading error:', e)
       setIsBuffering(false)
-    })
+    }
+    audioInstance.addEventListener('error', handleError)
 
     return () => {
+      // 清除定时器
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current)
+        progressIntervalRef.current = null
+      }
+      
+      // 暂停并清除音频源
       audioInstance.pause()
       audioInstance.src = ''
-      audioInstance.removeEventListener('timeupdate', handleTimeUpdate)
-      audioInstance.removeEventListener('loadedmetadata', handleLoadMetadata)
-      audioInstance.removeEventListener('ended', handleTrackEnd)
-      audioInstance.removeEventListener('waiting', handleWaiting)
-      audioInstance.removeEventListener('canplay', handleCanPlay)
-      audioInstance.removeEventListener('error', (e) => {
-        console.error('Audio loading error:', e)
-      })
+      
+      // 移除所有事件监听器
+      audioInstance.removeEventListener('timeupdate', onTimeUpdate)
+      audioInstance.removeEventListener('loadedmetadata', handleLoadMetadataEvent)
+      audioInstance.removeEventListener('ended', handleTrackEndEvent)
+      audioInstance.removeEventListener('waiting', handleWaitingEvent)
+      audioInstance.removeEventListener('canplay', handleCanPlayEvent)
+      audioInstance.removeEventListener('error', handleError)
     }
-  }, [])
+  }, [debug])
 
   const fetchMusicList = async (page: number = 1, pageSize: number = 10) => {
     if (!user?.userId) return
@@ -117,14 +141,6 @@ export default function MusicPage() {
       console.error('Failed to fetch music list:', error)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleTimeUpdate = () => {
-    if (audio) {
-      setCurrentTime(audio.currentTime)
-      // 调试日志
-      // console.log('Time update:', audio.currentTime, '/', audio.duration)
     }
   }
 
@@ -234,26 +250,52 @@ export default function MusicPage() {
 
     if (currentTrack?.musicId === track.musicId) {
       if (isPlaying) {
+        // 暂停播放
         audio.pause()
+        setIsPlaying(false)
+        
+        // 清除进度更新定时器
+        if (progressIntervalRef.current) {
+          clearInterval(progressIntervalRef.current)
+          progressIntervalRef.current = null
+        }
       } else {
+        // 继续播放
         setIsBuffering(true)
-        audio.play().catch(err => {
+        try {
+          await audio.play()
+          setIsPlaying(true)
+          console.log('Playback resumed')
+        } catch (err) {
           console.error('Error playing audio:', err)
           setIsBuffering(false)
-        })
+        }
       }
-      setIsPlaying(!isPlaying)
     } else {
       // 设置加载状态
       setLoadingTrack(track)
       setIsBuffering(true)
+      
+      // 清除可能存在的进度更新定时器
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current)
+        progressIntervalRef.current = null
+      }
       
       // 先重置状态
       setCurrentTime(0)
       
       try {
         // 预加载音频
-        await preloadAudio(track)
+        const preloadSuccess = await preloadAudio(track)
+        
+        if (!preloadSuccess) {
+          throw new Error('Failed to preload audio')
+        }
+        
+        // 确保我们再次将播放位置重置为开始
+        audio.currentTime = 0
+        setCurrentTime(0)
         
         // 播放音频
         await audio.play()
@@ -262,6 +304,16 @@ export default function MusicPage() {
         setCurrentTrack(track)
         setLoadingTrack(null)
         setIsPlaying(true)
+        
+        // 强制触发一次进度更新
+        setTimeout(() => {
+          if (audio) {
+            setCurrentTime(audio.currentTime)
+          }
+        }, 100)
+        
+        // 确认播放已开始
+        console.log('Playing started for track:', track.musicName, 'Current time:', audio.currentTime)
       } catch (error) {
         console.error('Error playing audio:', error)
         setIsBuffering(false)
@@ -438,6 +490,39 @@ export default function MusicPage() {
     return 100 // 默认100秒，确保进度条可以使用
   }
 
+  // 新增定时器进度更新机制
+  useEffect(() => {
+    // 只有在播放时才启动定时器
+    if (isPlaying && audio) {
+      // 清除可能存在的旧定时器
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current)
+      }
+      
+      // 设置新的定时器，每100ms更新一次进度
+      progressIntervalRef.current = setInterval(() => {
+        if (audio && !audio.paused) {
+          setCurrentTime(audio.currentTime)
+          if (debug) {
+            console.log('Timer update:', audio.currentTime, '/', audio.duration)
+          }
+        }
+      }, 100)
+      
+      // 调试日志
+      console.log('Progress update timer started')
+    }
+    
+    // 清理函数
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current)
+        progressIntervalRef.current = null
+        console.log('Progress update timer cleared')
+      }
+    }
+  }, [isPlaying, audio, debug])
+
   // 增强的进度条点击处理函数
   const handleProgressBarClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!audio || !progressBarRef.current) return
@@ -449,17 +534,29 @@ export default function MusicPage() {
     const newTime = percentage * currentDuration
     
     if (newTime >= 0 && newTime <= currentDuration) {
-      // 先设置UI状态，让用户立即看到变化
-      setCurrentTime(newTime)
-      setIsBuffering(true)
-      
-      // 然后设置音频时间并播放
-      audio.currentTime = newTime
-      
-      // 如果当前未播放，则开始播放
-      if (!isPlaying && currentTrack) {
-        audio.play().catch(e => console.error('Error playing after seek:', e))
-        setIsPlaying(true)
+      try {
+        // 设置音频时间
+        audio.currentTime = newTime
+        
+        // 手动触发一次时间更新，以便UI立即更新
+        setCurrentTime(newTime)
+        console.log('Seek to:', newTime)
+        
+        // 如果当前未播放，则开始播放
+        if (!isPlaying && currentTrack) {
+          setIsBuffering(true)
+          audio.play()
+            .then(() => {
+              setIsPlaying(true)
+              console.log('Playback started after seek')
+            })
+            .catch(e => {
+              console.error('Error playing after seek:', e)
+              setIsBuffering(false)
+            })
+        }
+      } catch (error) {
+        console.error('Error during seek operation:', error)
       }
     }
   }
@@ -500,13 +597,22 @@ export default function MusicPage() {
           {/* 标题和上传按钮 */}
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-xl font-bold">我的音乐</h1>
-            <button 
-              onClick={() => setShowUploadModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-[#FF8200] text-white rounded-full hover:bg-[#ff9933]"
-            >
-              <Upload className="w-4 h-4" />
-              上传音乐
-            </button>
+            <div className="flex gap-2">
+              {/* 添加调试模式切换按钮 - 在开发环境可以使用 */}
+              <button 
+                onClick={() => setDebug(!debug)}
+                className="text-xs text-gray-400 hover:text-gray-600"
+              >
+                {debug ? '关闭调试' : '调试模式'}
+              </button>
+              <button 
+                onClick={() => setShowUploadModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-[#FF8200] text-white rounded-full hover:bg-[#ff9933]"
+              >
+                <Upload className="w-4 h-4" />
+                上传音乐
+              </button>
+            </div>
           </div>
 
           {/* 当前播放信息 */}
@@ -516,6 +622,13 @@ export default function MusicPage() {
             </h2>
             {isBuffering && (
               <div className="text-sm text-gray-500">缓冲中...</div>
+            )}
+            {debug && (
+              <div className="text-xs text-gray-400 mt-1">
+                播放状态: {isPlaying ? '播放中' : '已暂停'} | 
+                当前时间: {formatTime(currentTime)} | 
+                总时长: {formatTime(duration)}
+              </div>
             )}
           </div>
 
