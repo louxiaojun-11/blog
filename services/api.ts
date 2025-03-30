@@ -806,22 +806,17 @@ export const musicService = {
       throw error;
     }
   },
-  
-  // 上传音乐文件，后端会自动保存到数据库
-  uploadMusic: async (musicFile: FormData) => {
+
+  uploadMusic: async (formData: FormData) => {
     try {
-      const response = await api.post<ApiResponse<{
-        musicUrl: string;
-        musicName: string;
-      }>>('/uploadMusic', musicFile, {
+      const response = await api.post<ApiResponse<string>>('/uploadMusic', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        baseURL: 'http://localhost:8080/api'
       });
       return response.data;
     } catch (error) {
-      console.error('Error uploading music file:', error);
+      console.error('Error uploading music:', error);
       throw error;
     }
   }
