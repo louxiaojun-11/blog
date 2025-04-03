@@ -18,22 +18,18 @@ interface UserProfile {
   introduce: string | null;
   status: number;
   pageResult: {
+    total: number;
     records: {
       id: number;
       title: string;
       content: string;
-      userID: number;
+      userId: number;
       likes: number;
       views: number;
       comments: number;
       createdAt: string;
-      author: {
-        id: number | null;
-        avatar: string;
-        username: string;
-      };
+      updatedAt: string;
     }[];
-    total: number;
   };
 }
 
@@ -54,7 +50,7 @@ const getStatusText = (status: number) => {
 
 export default function UserProfilePage() {
   const searchParams = useSearchParams()
-  const relationId = searchParams.get('relationId')
+  const userId = searchParams.get('userId')
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
@@ -65,11 +61,11 @@ export default function UserProfilePage() {
 
   useEffect(() => {
     const loadProfile = async () => {
-      if (!relationId) return
+      if (!userId) return
       
       try {
         setLoading(true)
-        const response = await userService.getUserRelationProfile(Number(relationId), page, pageSize)
+        const response = await userService.getUserRelationProfile(Number(userId), page, pageSize)
         if (response.success) {
           setProfile(response.data)
         }
@@ -81,7 +77,7 @@ export default function UserProfilePage() {
     }
 
     loadProfile()
-  }, [relationId, page, pageSize])
+  }, [userId, page, pageSize])
 
   const handleFollowAction = async () => {
     if (!profile || loading) return
