@@ -419,7 +419,7 @@ export default function BlogList({
         </div>
       )}
 
-      <div className="space-y-4">
+      <div>
         {blogs.map((blog) => {
           const isExpanded = expandedBlogs.has(blog.id)
           const needsExpansion = blog.content.length > 100
@@ -438,7 +438,10 @@ export default function BlogList({
           const isCurrentUserBlog = user?.userId === authorId
 
           return (
-            <article key={blog.id} className={isPersonal ? "bg-white rounded-lg shadow p-6" : "p-4 border-b last:border-b-0"}>
+            <article 
+              key={blog.id} 
+              className="mb-4 bg-white rounded-lg shadow p-4"
+            >
               <h3 className="text-lg font-bold mb-2">
                 {blog.title}
                 {isCurrentUserBlog && (
