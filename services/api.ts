@@ -312,7 +312,25 @@ export const blogService = {
       console.error('Error adding comment:', error);
       throw error;
     }
-  }
+  },
+
+  // 添加搜索博文方法
+  searchBlogs: async ({ keyword, page = 1, pageSize = 10 }: { keyword: string, page?: number, pageSize?: number }) => {
+    try {
+      // 使用api实例发送请求到后端SpringBoot API
+      const response = await api.get<ApiResponse<{
+        total: number;
+        records: BlogPost[];
+      }>>('/blog/searchBlogs', {
+        params: { keyword, page, pageSize }
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error searching blogs:', error);
+      throw error;
+    }
+  },
 };
 
 interface RegisterData {

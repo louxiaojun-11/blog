@@ -69,8 +69,10 @@ export interface BlogPost {
   id: number;
   title: string;
   content: string;
+  userId?: number;  // 添加可选字段
   author: {
-    userId: number;
+    id?: number | null;  // 兼容不同的ID字段名
+    userId?: number;      // 兼容不同的ID字段名
     username: string;
     avatar: string;
   };
