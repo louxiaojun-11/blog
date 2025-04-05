@@ -8,6 +8,12 @@ import { useAuth } from '@/contexts/AuthContext'
 import { X, Eye, EyeOff, Upload, Pencil, Check } from 'lucide-react'
 import { uploadService, userService } from '@/services/api'
 import Link from 'next/link'
+import CryptoJS from 'crypto-js'
+
+// 添加MD5加密函数
+const encryptPassword = (password: string): string => {
+  return CryptoJS.MD5(password).toString();
+}
 
 export default function Page() {  // 注意：这里使用 Page 作为组件名
   const { user, token, login } = useAuth()
@@ -76,6 +82,7 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
         try {
           const response = await userService.getUserPassword(user.userId);
           if (response.success) {
+            console.log('原始加密密码获取成功');
             setOriginalPassword(response.data);
           }
         } catch (error) {
@@ -152,16 +159,24 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
 
       // 处理密码更新
       if (formData.oldPassword && formData.newPassword && formData.confirmPassword) {
+        // MD5加密原密码再进行比对
+        const encryptedOldPassword = encryptPassword(formData.oldPassword)
+        console.log('输入密码MD5加密后:', encryptedOldPassword);
+        console.log('原始加密密码:', originalPassword);
+        
         // 验证原密码
-        if (formData.oldPassword !== originalPassword) {
+        if (encryptedOldPassword !== originalPassword) {
           alert('原密码不正确')
           return
         }
+        
         // 验证新密码一致性
         if (formData.newPassword !== formData.confirmPassword) {
           alert('两次输入的新密码不一致')
           return
         }
+        
+        // 新密码直接传递，后端会进行加密
         updateData.password = formData.newPassword
       }
 
@@ -186,6 +201,16 @@ export default function Page() {  // 注意：这里使用 Page 作为组件名
           ...(updateData.avatar && { avatar: updateData.avatar })
         }
         login(updatedUser, token)
+        
+        // 如果更新了密码，清空密码字段
+        if (updateData.password) {
+          setFormData(prev => ({
+            ...prev,
+            oldPassword: '',
+            newPassword: '',
+            confirmPassword: ''
+          }))
+        }
         
         setShowEditModal(false)
         // 显示成功提示
