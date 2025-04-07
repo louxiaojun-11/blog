@@ -106,16 +106,38 @@ export default function ChatWidget({ onClose }: ChatWidgetProps) {
   }, [chatHistory])
 
   const handleSendMessage = () => {
-    if (!newMessage.trim() || !selectedFriend || !socket) return
+    if (!newMessage.trim() || !selectedFriend || !socket) return;
 
-    const message = {
-      receiverId: selectedFriend.userId.toString(),
-      msg: newMessage.trim()
+    try {
+      const messageData = {
+        receiverId: selectedFriend.userId.toString(),
+        msg: newMessage.trim()
+      };
+      
+      socket.send(JSON.stringify(messageData));
+      
+      // 将发送的消息添加到本地聊天历史
+      const sentMessage = {
+        id: Date.now(), // 临时ID
+        senderId: user?.userId || 0,
+        receiverId: selectedFriend.userId,
+        message: newMessage.trim(),
+        sendTime: new Date().toISOString()
+      };
+      
+      setChatHistory(prev => [...prev, sentMessage]);
+      setNewMessage('');
+      
+      // 滚动到最新消息
+      setTimeout(() => {
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    } catch (error) {
+      console.error('发送消息失败:', error);
     }
-
-    socket.send(JSON.stringify(message))
-    setNewMessage('')
-  }
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
