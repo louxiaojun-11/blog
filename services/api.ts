@@ -132,14 +132,14 @@ export const friendService = {
         success: true,
         data: [
           {
-            id: 6,
+            userId: 6,
             username: "张三丰",
             avatar: "https://picsum.photos/48/48?random=6",
             status: "online",
             lastActive: "刚刚"
           },
           {
-            id: 7,
+            userId: 7,
             username: "张无忌",
             avatar: "https://picsum.photos/48/48?random=7",
             status: "offline",

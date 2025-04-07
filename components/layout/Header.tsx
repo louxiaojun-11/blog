@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useWebSocket } from '@/contexts/WebSocketContext'
 import { userService } from '@/services/api'
 import { useSearchContext } from '@/contexts/SearchContext'
+import ChatWidget from '@/components/features/chat/ChatWidget'
 
 export default function Header() {
   const [searchType, setSearchType] = useState<'blog' | 'user'>('blog')
@@ -21,6 +22,7 @@ export default function Header() {
   const { disconnect } = useWebSocket();
   const [searchQuery, setSearchQuery] = useState('')
   const { setSearchResults, setIsSearching } = useSearchContext()
+  const [showChat, setShowChat] = useState(false)
 
   // 点击页面其他地方时关闭下拉菜单
   useEffect(() => {
@@ -139,9 +141,12 @@ export default function Header() {
           <Link href="/video" className="hover:text-[#FF8200]">
             <Video className="h-6 w-6" />
           </Link>
-          <Link href="/messages" className="hover:text-[#FF8200]">
+          <button 
+            onClick={() => setShowChat(true)}
+            className="hover:text-[#FF8200]"
+          >
             <MessageCircle className="h-6 w-6" />
-          </Link>
+          </button>
           <div className="relative" ref={dropdownRef}>
             <button 
               onClick={() => setShowDropdown(!showDropdown)}
@@ -177,6 +182,7 @@ export default function Header() {
           </div>
         </nav>
       </div>
+      {showChat && <ChatWidget onClose={() => setShowChat(false)} />}
     </header>
   )
 } 
