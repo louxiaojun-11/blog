@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { useWebSocket } from '@/contexts/WebSocketContext'
 import { authService } from '@/services/api'
 import { Check } from 'lucide-react'
 
@@ -14,6 +15,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const { login } = useAuth()
+  const { connect } = useWebSocket()
 
   // 注册表单状态
   const [username, setUsername] = useState('')
@@ -38,7 +40,13 @@ export default function LoginPage() {
           username: data.username,
           avatar: data.avatar
         }
+        
+        // 登录用户
         login(userData, data.token)
+        
+        // 建立WebSocket连接
+        connect(data.userId)
+        
         router.push('/')
       } else {
         setError(response.message || '登录失败')

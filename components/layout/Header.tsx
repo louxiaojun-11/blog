@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
+import { useWebSocket } from '@/contexts/WebSocketContext'
 import { userService } from '@/services/api'
 import { useSearchContext } from '@/contexts/SearchContext'
 
@@ -17,6 +18,7 @@ export default function Header() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { logout, user } = useAuth();
+  const { disconnect } = useWebSocket();
   const [searchQuery, setSearchQuery] = useState('')
   const { setSearchResults, setIsSearching } = useSearchContext()
 
@@ -36,7 +38,13 @@ export default function Header() {
 
   const handleLogout = () => {
     if (confirm('确定要退出登录吗？')) {
+      // 断开WebSocket连接
+      disconnect();
+      
+      // 执行登出操作
       logout();
+      
+      // 跳转到登录页
       router.push('/login');
     }
   };
