@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from '@/contexts/AuthContext'
+import { AdminAuthProvider } from '@/contexts/AdminAuthContext'
 import { SearchProvider } from '@/contexts/SearchContext'
 import { WebSocketProvider } from '@/contexts/WebSocketContext'
 
@@ -32,11 +33,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <WebSocketProvider>
-            <SearchProvider>
-              {children}
-            </SearchProvider>
-          </WebSocketProvider>
+          <AdminAuthProvider>
+            <WebSocketProvider>
+              <SearchProvider>
+                {children}
+              </SearchProvider>
+            </WebSocketProvider>
+          </AdminAuthProvider>
         </AuthProvider>
       </body>
     </html>
