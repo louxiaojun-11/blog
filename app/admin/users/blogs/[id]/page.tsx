@@ -2,7 +2,18 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Calendar, ThumbsUp, Eye, MessageSquare } from 'lucide-react'
+import { ArrowLeft, Calendar, ThumbsUp, MessageSquare } from 'lucide-react'
+import { adminService } from '@/services/adminApi'
+
+interface BlogDetail {
+  id: number;
+  title: string;
+  content: string;
+  userId: number;
+  likes: number;
+  comments: number;
+  createdAt: string;
+}
 
 export default function BlogDetail() {
   const params = useParams()
@@ -11,41 +22,27 @@ export default function BlogDetail() {
   const blogId = params.id
   const userId = searchParams.get('userId')
   
-  const [blog, setBlog] = useState<{
-    id: number;
-    title: string;
-    content: string;
-    userId: number;
-    likes: number;
-    views: number;
-    comments: number;
-    createdAt: string;
-    updatedAt: string;
-  } | null>(null)
+  const [blog, setBlog] = useState<BlogDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // 这里应该是从后端获取博文详情的API
-    // 由于没有提供博文详情的API，我们模拟一个博文详情
     const fetchBlogDetail = async () => {
+      if (!blogId) {
+        setError('博文ID不能为空')
+        setLoading(false)
+        return
+      }
+
       try {
         setLoading(true)
-        // 模拟API请求延迟
-        await new Promise(resolve => setTimeout(resolve, 500))
+        const response = await adminService.getUserBlogDetail(Number(blogId))
         
-        // 模拟博文数据
-        setBlog({
-          id: Number(blogId),
-          title: '模拟博文标题',
-          content: '这是一篇模拟的博文内容。实际项目中，你应该调用后端API获取真实的博文详情数据。\n\n博文内容可能包含多个段落，这样做只是为了演示效果。\n\n在实际项目中，你可能需要处理博文的格式化和展示，比如支持Markdown或富文本格式。',
-          userId: Number(userId),
-          likes: 10,
-          views: 100,
-          comments: 5,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        })
+        if (response.success) {
+          setBlog(response.data)
+        } else {
+          setError(response.message || '获取博文详情失败')
+        }
       } catch (error) {
         console.error('Error fetching blog detail:', error)
         setError('获取博文详情失败')
@@ -54,13 +51,8 @@ export default function BlogDetail() {
       }
     }
 
-    if (blogId) {
-      fetchBlogDetail()
-    } else {
-      setError('博文ID不能为空')
-      setLoading(false)
-    }
-  }, [blogId, userId])
+    fetchBlogDetail()
+  }, [blogId])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -97,10 +89,6 @@ export default function BlogDetail() {
               {formatDate(blog.createdAt)}
             </div>
             <div className="flex items-center">
-              <Eye className="w-4 h-4 mr-1" />
-              {blog.views} 浏览
-            </div>
-            <div className="flex items-center">
               <ThumbsUp className="w-4 h-4 mr-1" />
               {blog.likes} 点赞
             </div>
@@ -112,7 +100,7 @@ export default function BlogDetail() {
           
           <div className="border-t border-gray-200 pt-6">
             <div className="prose max-w-none">
-              {blog.content.split('\n\n').map((paragraph, index) => (
+              {blog.content.split('\n').map((paragraph, index) => (
                 <p key={index} className="mb-4">{paragraph}</p>
               ))}
             </div>
