@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { adminService } from '@/services/adminApi'
-import { ArrowLeft, Calendar } from 'lucide-react'
+import { ArrowLeft, Calendar, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 
 interface Blog {
@@ -30,6 +30,9 @@ export default function UserBlogs() {
   const [pageSize, setPageSize] = useState(10)
   const [totalBlogs, setTotalBlogs] = useState(0)
   const [userName, setUserName] = useState<string>('')
+  const [showViolationModal, setShowViolationModal] = useState(false)
+  const [selectedBlogId, setSelectedBlogId] = useState<number | null>(null)
+  const [violationReason, setViolationReason] = useState('')
 
   useEffect(() => {
     if (!userId) {
@@ -69,6 +72,38 @@ export default function UserBlogs() {
 
     fetchUserBlogs()
   }, [userId, page, pageSize])
+
+  const handleReportViolation = async () => {
+    if (!selectedBlogId || !violationReason.trim()) return;
+
+    try {
+      const response = await adminService.reportBlogViolation(
+        selectedBlogId,
+        violationReason.trim()
+      );
+
+      if (response.success) {
+        alert('博文已下架');
+        setShowViolationModal(false);
+        setSelectedBlogId(null);
+        setViolationReason('');
+        // 刷新博文列表
+        const updatedResponse = await adminService.getUserBlogList(
+          Number(userId),
+          page,
+          pageSize
+        );
+        if (updatedResponse.success) {
+          setBlogs(updatedResponse.data.records);
+        }
+      } else {
+        alert(response.message || '操作失败');
+      }
+    } catch (error) {
+      console.error('Error reporting blog violation:', error);
+      alert('操作失败，请重试');
+    }
+  };
 
   const totalPages = Math.ceil(totalBlogs / pageSize)
 
@@ -114,9 +149,21 @@ export default function UserBlogs() {
                   >
                     {blog.title}
                   </Link>
-                  <div className="flex items-center text-gray-500 text-sm">
-                    <Calendar className="w-4 h-4 mr-1" />
-                    {formatDate(blog.createdAt)}
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center text-gray-500 text-sm">
+                      <Calendar className="w-4 h-4 mr-1" />
+                      {formatDate(blog.createdAt)}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedBlogId(blog.id);
+                        setShowViolationModal(true);
+                      }}
+                      className="flex items-center gap-1 text-red-500 hover:text-red-700"
+                    >
+                      <AlertTriangle className="w-4 h-4" />
+                      违规下架
+                    </button>
                   </div>
                 </div>
                 <div className="flex gap-4 text-sm text-gray-500">
@@ -127,6 +174,48 @@ export default function UserBlogs() {
               </div>
             ))}
           </div>
+          
+          {/* 违规下架模态框 */}
+          {showViolationModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <h2 className="text-xl font-bold mb-4">违规下架</h2>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="violationReason" className="block text-sm font-medium text-gray-700 mb-1">
+                      下架原因
+                    </label>
+                    <textarea
+                      id="violationReason"
+                      value={violationReason}
+                      onChange={(e) => setViolationReason(e.target.value)}
+                      className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                      rows={4}
+                      placeholder="请输入下架原因"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-4 mt-6">
+                  <button
+                    onClick={() => {
+                      setShowViolationModal(false);
+                      setSelectedBlogId(null);
+                      setViolationReason('');
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={handleReportViolation}
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                  >
+                    确认下架
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* 分页控制 */}
           <div className="flex justify-between items-center mt-6">

@@ -109,5 +109,18 @@ export const adminService = {
       console.error('Error reporting user violation:', error);
       throw error;
     }
+  },
+
+  reportBlogViolation: async (blogId: number, reason: string) => {
+    try {
+      const response = await adminApi.post('/user/userBlogViolation', {
+        blogId,
+        reason
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error reporting blog violation:', error);
+      throw error;
+    }
   }
 }; 
