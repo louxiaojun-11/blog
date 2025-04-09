@@ -19,6 +19,12 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
 
   // 用户状态变化时，自动处理连接
   useEffect(() => {
+    // 当用户登录时，自动建立WebSocket连接
+    if (user && user.userId && !socket) {
+      console.log('检测到用户已登录，自动建立WebSocket连接')
+      connect(user.userId)
+    }
+    
     // 当用户登出时，断开WebSocket连接
     if (!user && socket) {
       disconnect()
@@ -30,7 +36,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
         socket.close()
       }
     }
-  }, [user])
+  }, [user, socket])
 
   // 建立WebSocket连接
   const connect = (userId: number) => {
@@ -39,6 +45,7 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      console.log(`正在连接WebSocket: ws://localhost:8080/chat/${userId}`)
       const ws = new WebSocket(`ws://localhost:8080/chat/${userId}`)
       
       ws.onopen = () => {

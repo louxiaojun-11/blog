@@ -41,10 +41,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     sessionStorage.setItem('token', userToken)
     Cookies.set('token', userToken)
 
-    // 登录成功后建立WebSocket连接
-    // 注意：真正的连接逻辑会在WebSocketContext中执行
-    // 这里我们只需要确保用户状态已更新
-    console.log('用户登录成功，即将建立WebSocket连接')
+    // 登录成功后，WebSocket连接会在WebSocketContext的useEffect中自动建立
+    // 因为我们已经更新了user状态
+    console.log('用户登录成功，更新user状态，WebSocket连接将自动建立')
   }
 
   const logout = () => {
