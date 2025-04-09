@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { adminService } from '@/services/adminApi'
 import Image from 'next/image'
-import { Search, ArrowUpDown } from 'lucide-react'
+import { Search, ArrowUpDown, FileText } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 interface User {
   userId: number
@@ -24,6 +25,7 @@ export default function AdminUsers() {
   const [totalUsers, setTotalUsers] = useState(0)
   const [searchKey, setSearchKey] = useState<string>('')
   const [timeOrder, setTimeOrder] = useState(true)
+  const router = useRouter()
 
   const fetchUsers = async () => {
     try {
@@ -61,6 +63,10 @@ export default function AdminUsers() {
 
   const handleToggleTimeOrder = () => {
     setTimeOrder(!timeOrder)
+  }
+
+  const viewUserBlogs = (userId: number) => {
+    router.push(`/admin/users/blogs?userId=${userId}`)
   }
 
   const totalPages = Math.ceil(totalUsers / pageSize)
@@ -114,6 +120,7 @@ export default function AdminUsers() {
                   <th className="py-3 px-4 text-left">状态</th>
                   <th className="py-3 px-4 text-left">上次活跃</th>
                   <th className="py-3 px-4 text-left">注册时间</th>
+                  <th className="py-3 px-4 text-left">操作</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -141,6 +148,15 @@ export default function AdminUsers() {
                     </td>
                     <td className="py-3 px-4">{user.lastActive}</td>
                     <td className="py-3 px-4">{user.createdAt}</td>
+                    <td className="py-3 px-4">
+                      <button
+                        onClick={() => viewUserBlogs(user.userId)}
+                        className="flex items-center gap-1 text-blue-500 hover:text-blue-700"
+                      >
+                        <FileText className="w-4 h-4" />
+                        查看博文
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

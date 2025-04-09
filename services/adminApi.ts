@@ -67,5 +67,21 @@ export const adminService = {
       console.error('Get user list error:', error);
       throw error;
     }
+  },
+
+  getUserBlogList: async (userId: number, page: number, pageSize: number) => {
+    try {
+      const response = await adminApi.get('/user/userBlogList', {
+        params: {
+          userId,
+          page,
+          pageSize
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Get user blog list error:', error);
+      throw error;
+    }
   }
 }; 
