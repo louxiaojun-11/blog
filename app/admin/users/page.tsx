@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { adminService } from '@/services/adminApi'
 import Image from 'next/image'
-import { Search, ArrowUpDown, FileText } from 'lucide-react'
+import { Search, ArrowUpDown, FileText, AlertTriangle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 interface User {
@@ -25,6 +25,15 @@ export default function AdminUsers() {
   const [totalUsers, setTotalUsers] = useState(0)
   const [searchKey, setSearchKey] = useState<string>('')
   const [timeOrder, setTimeOrder] = useState(true)
+  const [showViolationModal, setShowViolationModal] = useState(false)
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
+  const [violationType, setViolationType] = useState<{
+    avatarLegal: boolean;
+    usernameLegal: boolean;
+  }>({
+    avatarLegal: true,
+    usernameLegal: true
+  })
   const router = useRouter()
 
   const fetchUsers = async () => {
@@ -69,6 +78,33 @@ export default function AdminUsers() {
     router.push(`/admin/users/blogs?userId=${userId}`)
   }
 
+  const handleReportViolation = async () => {
+    if (!selectedUserId) return;
+
+    try {
+      const response = await adminService.reportUserViolation(
+        selectedUserId,
+        violationType.avatarLegal,
+        violationType.usernameLegal
+      );
+
+      if (response.success) {
+        alert('违规举报已提交');
+        setShowViolationModal(false);
+        setSelectedUserId(null);
+        setViolationType({
+          avatarLegal: true,
+          usernameLegal: true
+        });
+      } else {
+        alert(response.message || '提交失败');
+      }
+    } catch (error) {
+      console.error('Error reporting violation:', error);
+      alert('提交失败，请重试');
+    }
+  };
+
   const totalPages = Math.ceil(totalUsers / pageSize)
 
   return (
@@ -102,6 +138,64 @@ export default function AdminUsers() {
         </button>
       </div>
       
+      {/* 违规举报模态框 */}
+      {showViolationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">举报用户违规</h2>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="avatarViolation"
+                  checked={!violationType.avatarLegal}
+                  onChange={(e) => setViolationType(prev => ({
+                    ...prev,
+                    avatarLegal: !e.target.checked
+                  }))}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="avatarViolation">头像违规</label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="usernameViolation"
+                  checked={!violationType.usernameLegal}
+                  onChange={(e) => setViolationType(prev => ({
+                    ...prev,
+                    usernameLegal: !e.target.checked
+                  }))}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="usernameViolation">用户名违规</label>
+              </div>
+            </div>
+            <div className="flex justify-end gap-4 mt-6">
+              <button
+                onClick={() => {
+                  setShowViolationModal(false);
+                  setSelectedUserId(null);
+                  setViolationType({
+                    avatarLegal: true,
+                    usernameLegal: true
+                  });
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleReportViolation}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+              >
+                确认举报
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 用户列表 */}
       {loading ? (
         <div className="text-center py-8">加载中...</div>
@@ -149,13 +243,25 @@ export default function AdminUsers() {
                     <td className="py-3 px-4">{user.lastActive}</td>
                     <td className="py-3 px-4">{user.createdAt}</td>
                     <td className="py-3 px-4">
-                      <button
-                        onClick={() => viewUserBlogs(user.userId)}
-                        className="flex items-center gap-1 text-blue-500 hover:text-blue-700"
-                      >
-                        <FileText className="w-4 h-4" />
-                        查看博文
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => viewUserBlogs(user.userId)}
+                          className="flex items-center gap-1 text-blue-500 hover:text-blue-700"
+                        >
+                          <FileText className="w-4 h-4" />
+                          查看博文
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedUserId(user.userId);
+                            setShowViolationModal(true);
+                          }}
+                          className="flex items-center gap-1 text-red-500 hover:text-red-700"
+                        >
+                          <AlertTriangle className="w-4 h-4" />
+                          用户违规
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

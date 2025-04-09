@@ -95,5 +95,19 @@ export const adminService = {
       console.error('Get blog detail error:', error);
       throw error;
     }
+  },
+
+  reportUserViolation: async (userId: number, avatarLegal: boolean, usernameLegal: boolean) => {
+    try {
+      const response = await adminApi.post('/user/userViolation', {
+        userId,
+        avatarLegal,
+        usernameLegal
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error reporting user violation:', error);
+      throw error;
+    }
   }
 }; 
