@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { UserMinus, UserX } from 'lucide-react'
 import { userService } from '@/services/api'
 import { useSearchParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 interface FollowUser {
   relationId: number;
@@ -45,10 +46,6 @@ export default function FollowList() {
     loadData()
   }, [tab])
 
-  const handleUserClick = (userId: number) => {
-    router.push(`/relation/profile?relationId=${userId}`)
-  }
-
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       {/* Tab 切换按钮 */}
@@ -82,9 +79,9 @@ export default function FollowList() {
         <div className="space-y-4">
           {(tab === 'following' ? following : followers).map((user) => (
             <div key={user.relationId} className="flex items-center gap-4 p-4 hover:bg-gray-50 rounded-lg">
-              <div 
+              <Link 
+                href={`/relation/profile?userId=${user.relationId}`}
                 className="cursor-pointer"
-                onClick={() => handleUserClick(user.relationId)}
               >
                 <Image
                   src={user.avatar}
@@ -93,14 +90,14 @@ export default function FollowList() {
                   height={48}
                   className="rounded-full"
                 />
-              </div>
+              </Link>
               <div className="flex-1">
-                <h3 
-                  className="font-medium cursor-pointer hover:text-[#FF8200]"
-                  onClick={() => handleUserClick(user.relationId)}
+                <Link 
+                  href={`/relation/profile?userId=${user.relationId}`}
+                  className="font-medium hover:text-[#FF8200]"
                 >
                   {user.username}
-                </h3>
+                </Link>
               </div>
               {tab === 'following' ? (
                 <button className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-50 rounded-full">
