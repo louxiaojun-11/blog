@@ -122,5 +122,43 @@ export const adminService = {
       console.error('Error reporting blog violation:', error);
       throw error;
     }
+  },
+
+  getInformationList: async (page: number, pageSize: number, type: string | null) => {
+    try {
+      const response = await adminApi.get('/admin/informationList', {
+        params: {
+          page,
+          pageSize,
+          type
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Get information list error:', error);
+      throw error;
+    }
+  },
+
+  getInformationDetail: async (informationId: number) => {
+    try {
+      const response = await adminApi.get('/admin/informationDetail', {
+        params: { informationId }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Get information detail error:', error);
+      throw error;
+    }
+  },
+
+  deleteInformation: async (informationId: number) => {
+    try {
+      const response = await adminApi.delete(`/admin/deleteInformation/${informationId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Delete information error:', error);
+      throw error;
+    }
   }
 }; 

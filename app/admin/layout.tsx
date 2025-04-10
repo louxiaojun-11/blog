@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAdminAuth } from '@/contexts/AdminAuthContext'
-import { Users, FileCheck, Megaphone, LayoutDashboard, Settings } from 'lucide-react'
+import { Users, FileCheck, Megaphone, LayoutDashboard, Settings, Newspaper, ChevronDown, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
 export default function AdminLayout({
@@ -13,14 +13,25 @@ export default function AdminLayout({
 }) {
   const { admin, logout } = useAdminAuth()
   const router = useRouter()
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
+    users: false
+  })
 
   const handleLogout = () => {
     logout()
     router.push('/login')
   }
 
+  const toggleMenu = (menuKey: string) => {
+    setExpandedMenus(prev => ({
+      ...prev,
+      [menuKey]: !prev[menuKey]
+    }))
+  }
+
   const menuItems = [
     { icon: Users, label: '用户管理', href: '/admin/users' },
+    { icon: Newspaper, label: '资讯管理', href: '/admin/information' },
     { icon: FileCheck, label: '内容审核', href: '/admin/content' },
     { icon: Megaphone, label: '公告管理', href: '/admin/announcements' },
     { icon: LayoutDashboard, label: '控制台', href: '/admin/dashboard' },
