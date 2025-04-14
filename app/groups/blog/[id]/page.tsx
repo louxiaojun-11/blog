@@ -147,8 +147,8 @@ export default function GroupBlogDetailPage() {
       if (response.success) {
         // 将用户资料存储到 sessionStorage，与个人主页保持一致
         sessionStorage.setItem('visitedProfile', JSON.stringify(response.data))
-        // 跳转到用户主页，使用relationId作为参数
-        router.push(`/relation/profile?relationId=${blogDetail.userId}`)
+        // 跳转到用户主页，使用userId作为参数
+        router.push(`/relation/profile?userId=${blogDetail.userId}`)
       } else {
         console.error('Failed to fetch user profile:', response.message)
       }

@@ -42,7 +42,7 @@ export default function FriendsList() {
       
       if (response.success) {
         sessionStorage.setItem('visitedProfile', JSON.stringify(response.data))
-        router.push(`/relation/profile?relationId=${userId}`)
+        router.push(`/relation/profile?userId=${userId}`)
       } else {
         console.error('Failed to fetch user profile:', response.message)
       }

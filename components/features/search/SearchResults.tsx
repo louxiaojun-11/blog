@@ -32,8 +32,8 @@ export default function SearchResults() {
         {filteredResults.map((user) => (
           <div key={user.relationId} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50">
             <Link
-              href={`/relation/profile?relationId=${user.relationId}`}
-              className="flex items-center gap-3 flex-1"
+              href={`/relation/profile?userId=${user.userId}`}
+              className="flex items-center gap-4 p-4 hover:bg-gray-50 cursor-pointer"
             >
               <Image
                 src={user.avatar}

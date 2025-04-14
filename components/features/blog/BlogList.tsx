@@ -360,13 +360,9 @@ export default function BlogList({
   };
 
   // 处理点击作者头像的事件
-  const handleAuthorClick = (authorId: number | undefined) => {
-    if (!authorId) return;
-    
-    // 使用正确的URL格式导航到用户资料页面
-    const profileUrl = `/relation/profile?userId=${authorId}`;
-    window.location.href = profileUrl;
-  }
+  const handleAuthorClick = (userId: number) => {
+    router.push(`/relation/profile?userId=${userId}`);
+  };
 
   if (loading) {
     return <div className="text-center py-8">加载中...</div>
