@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAdminAuth } from '@/contexts/AdminAuthContext'
-import { Users, FileCheck, Megaphone, LayoutDashboard, Settings, Newspaper, ChevronDown, ChevronRight } from 'lucide-react'
+import { Users, FileCheck, Megaphone, LayoutDashboard, Settings, Newspaper, ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 
 export default function AdminLayout({
@@ -34,6 +34,7 @@ export default function AdminLayout({
     { icon: Newspaper, label: '资讯管理', href: '/admin/information' },
     { icon: FileCheck, label: '内容审核', href: '/admin/content' },
     { icon: Megaphone, label: '公告管理', href: '/admin/announcements' },
+    { icon: AlertTriangle, label: '敏感词管理', href: '/admin/sensitive-words' },
     { icon: LayoutDashboard, label: '控制台', href: '/admin/dashboard' },
     { icon: Settings, label: '系统设置', href: '/admin/settings' },
   ]

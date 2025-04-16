@@ -160,5 +160,41 @@ export const adminService = {
       console.error('Delete information error:', error);
       throw error;
     }
+  },
+
+  listWords: async (page: number, pageSize: number, keyword?: string) => {
+    try {
+      const response = await adminApi.get('/admin/listWords', {
+        params: {
+          page,
+          pageSize,
+          keyword: keyword || null
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Get sensitive words list error:', error);
+      throw error;
+    }
+  },
+
+  addWord: async (word: string) => {
+    try {
+      const response = await adminApi.post('/admin/addWord', { word });
+      return response.data;
+    } catch (error) {
+      console.error('Add sensitive word error:', error);
+      throw error;
+    }
+  },
+
+  deleteWord: async (id: number) => {
+    try {
+      const response = await adminApi.delete(`/admin/deleteWord/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Delete sensitive word error:', error);
+      throw error;
+    }
   }
 }; 
