@@ -19,6 +19,8 @@ export default function PostHobbyBlogPage() {
   const [images, setImages] = useState<string[]>(['', '', '', ''])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [showError, setShowError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   const handleImageUpload = async (file: File, index: number) => {
     try {
@@ -85,10 +87,20 @@ export default function PostHobbyBlogPage() {
         setTimeout(() => {
           router.push(`/groups/${groupId}`)
         }, 2000)
+      } else {
+        setErrorMessage(response.message || '发布失败')
+        setShowError(true)
+        setTimeout(() => {
+          setShowError(false)
+        }, 3000)
       }
     } catch (error) {
       console.error('Failed to post blog:', error)
-      alert('发布失败，请重试')
+      setErrorMessage('发布失败，请重试')
+      setShowError(true)
+      setTimeout(() => {
+        setShowError(false)
+      }, 3000)
     } finally {
       setIsSubmitting(false)
     }
@@ -103,6 +115,15 @@ export default function PostHobbyBlogPage() {
               <Check className="w-4 h-4 text-green-600" />
             </div>
             <span className="text-green-800">发布成功！</span>
+          </div>
+        )}
+
+        {showError && (
+          <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-50 border border-red-200 rounded-lg px-6 py-4 shadow-lg flex items-center gap-2 z-50">
+            <div className="bg-red-100 rounded-full p-1">
+              <X className="w-4 h-4 text-red-600" />
+            </div>
+            <span className="text-red-800">{errorMessage}</span>
           </div>
         )}
 

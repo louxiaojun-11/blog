@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { blogService } from '@/services/api'
 import MainLayout from '@/app/layouts/MainLayout'
 import { useAuth } from '@/contexts/AuthContext'
-import { Check } from 'lucide-react'
+import { Check, X } from 'lucide-react'
 
 export default function WriteBlogPage() {
   const router = useRouter()
@@ -14,6 +14,8 @@ export default function WriteBlogPage() {
   const [content, setContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [showError, setShowError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,10 +44,22 @@ export default function WriteBlogPage() {
         setTimeout(() => {
           window.location.reload()
         }, 3000)
+      } else {
+        setErrorMessage(response.message || '发布失败')
+        setShowError(true)
+        // 3秒后自动关闭错误提示
+        setTimeout(() => {
+          setShowError(false)
+        }, 3000)
       }
     } catch (error) {
       console.error('Failed to create blog:', error)
-      alert('发布失败，请重试')
+      setErrorMessage('发布失败，请重试')
+      setShowError(true)
+      // 3秒后自动关闭错误提示
+      setTimeout(() => {
+        setShowError(false)
+      }, 3000)
     } finally {
       setIsSubmitting(false)
     }
@@ -61,6 +75,16 @@ export default function WriteBlogPage() {
               <Check className="w-4 h-4 text-green-600" />
             </div>
             <span className="text-green-800">发布成功！</span>
+          </div>
+        )}
+
+        {/* 错误提示组件 */}
+        {showError && (
+          <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-50 border border-red-200 rounded-lg px-6 py-4 shadow-lg flex items-center gap-2 z-50">
+            <div className="bg-red-100 rounded-full p-1">
+              <X className="w-4 h-4 text-red-600" />
+            </div>
+            <span className="text-red-800">{errorMessage}</span>
           </div>
         )}
 
