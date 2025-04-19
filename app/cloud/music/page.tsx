@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import MainLayout from '@/app/layouts/MainLayout'
-import { Music2, Play, Pause } from 'lucide-react'
+import { Music2, Play, Pause, ArrowLeft } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 interface MusicFile {
   fileName: string
@@ -23,6 +24,7 @@ interface MusicResponse {
 }
 
 export default function MusicPage() {
+  const router = useRouter()
   const { user } = useAuth()
   const [musicList, setMusicList] = useState<MusicFile[]>([])
   const [loading, setLoading] = useState(true)
@@ -38,15 +40,48 @@ export default function MusicPage() {
     }
   }, [user?.userId, currentPage])
 
+  // 添加音频事件监听
+  const setupAudioListeners = (audio: HTMLAudioElement, fileId: number) => {
+    audio.addEventListener('play', () => {
+      // 停止其他正在播放的音频
+      Object.entries(audioRefs.current).forEach(([id, otherAudio]) => {
+        if (otherAudio && Number(id) !== fileId) {
+          otherAudio.pause()
+        }
+      })
+      setCurrentPlayingId(fileId)
+    })
+
+    audio.addEventListener('pause', () => {
+      if (currentPlayingId === fileId) {
+        setCurrentPlayingId(null)
+      }
+    })
+
+    audio.addEventListener('ended', () => {
+      if (currentPlayingId === fileId) {
+        setCurrentPlayingId(null)
+      }
+    })
+  }
+
+  // 移除音频事件监听
+  const cleanupAudioListeners = (audio: HTMLAudioElement) => {
+    audio.removeEventListener('play', () => {})
+    audio.removeEventListener('pause', () => {})
+    audio.removeEventListener('ended', () => {})
+  }
+
   const handlePlay = (fileId: number) => {
+    const currentAudio = audioRefs.current[fileId]
+    if (!currentAudio) return
+
     // 如果点击的是当前正在播放的音乐
     if (currentPlayingId === fileId) {
-      const currentAudio = audioRefs.current[fileId]
-      if (currentAudio?.paused) {
+      if (currentAudio.paused) {
         currentAudio.play()
       } else {
-        currentAudio?.pause()
-        setCurrentPlayingId(null)
+        currentAudio.pause()
       }
       return
     }
@@ -57,19 +92,28 @@ export default function MusicPage() {
     }
 
     // 播放新选择的音乐
-    const newAudio = audioRefs.current[fileId]
-    if (newAudio) {
-      newAudio.play()
-      setCurrentPlayingId(fileId)
-    }
-  }
-
-  const handleAudioEnd = (fileId: number) => {
-    setCurrentPlayingId(null)
+    currentAudio.play()
   }
 
   const setAudioRef = (element: HTMLAudioElement | null, fileId: number) => {
-    audioRefs.current[fileId] = element
+    if (element) {
+      // 移除旧的事件监听器
+      const oldAudio = audioRefs.current[fileId]
+      if (oldAudio) {
+        cleanupAudioListeners(oldAudio)
+      }
+      
+      // 设置新的音频元素并添加事件监听器
+      audioRefs.current[fileId] = element
+      setupAudioListeners(element, fileId)
+    } else {
+      // 如果元素被移除，清理事件监听器
+      const oldAudio = audioRefs.current[fileId]
+      if (oldAudio) {
+        cleanupAudioListeners(oldAudio)
+      }
+      audioRefs.current[fileId] = null
+    }
   }
 
   const handleDownload = (url: string, fileName: string) => {
@@ -166,10 +210,19 @@ export default function MusicPage() {
     <MainLayout>
       <div className="pt-4 px-4">
         <div className="bg-white rounded-lg shadow-lg p-6">
-          <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
-            <Music2 className="h-6 w-6 text-[#FF8200]" />
-            我的音乐
-          </h1>
+          <div className="flex items-center gap-4 mb-6">
+            <button
+              onClick={() => router.push('/cloud')}
+              className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              <span>返回云盘</span>
+            </button>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <Music2 className="h-6 w-6 text-[#FF8200]" />
+              我的音乐
+            </h1>
+          </div>
 
           {loading ? (
             <div className="text-center py-8">加载中...</div>
@@ -201,7 +254,6 @@ export default function MusicPage() {
                   <audio
                     ref={(el) => setAudioRef(el, music.fileId)}
                     src={music.url}
-                    onEnded={() => handleAudioEnd(music.fileId)}
                     controls
                     className="w-80"
                   >
