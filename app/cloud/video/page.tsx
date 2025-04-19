@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import MainLayout from '@/app/layouts/MainLayout'
-import { Music2, Play, Pause, ArrowLeft, Trash2 } from 'lucide-react'
+import { Video, ArrowLeft, Download, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
-interface MusicFile {
+interface VideoFile {
   fileName: string
   fileId: number
   url: string
@@ -14,118 +14,32 @@ interface MusicFile {
   createdAt: string
 }
 
-interface MusicResponse {
+interface VideoResponse {
   success: boolean
   data: {
     total: number
-    records: MusicFile[]
+    records: VideoFile[]
   }
   message: string | null
 }
 
-export default function MusicPage() {
+export default function VideoPage() {
   const router = useRouter()
   const { user } = useAuth()
-  const [musicList, setMusicList] = useState<MusicFile[]>([])
+  const [videoList, setVideoList] = useState<VideoFile[]>([])
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize] = useState(10)
   const [total, setTotal] = useState(0)
-  const [currentPlayingId, setCurrentPlayingId] = useState<number | null>(null)
-  const audioRefs = useRef<{ [key: number]: HTMLAudioElement | null }>({})
+  const [selectedVideo, setSelectedVideo] = useState<VideoFile | null>(null)
 
   useEffect(() => {
     if (user?.userId) {
-      fetchMusicList()
+      fetchVideoList()
     }
   }, [user?.userId, currentPage])
 
-  // 添加音频事件监听
-  const setupAudioListeners = (audio: HTMLAudioElement, fileId: number) => {
-    audio.addEventListener('play', () => {
-      // 停止其他正在播放的音频
-      Object.entries(audioRefs.current).forEach(([id, otherAudio]) => {
-        if (otherAudio && Number(id) !== fileId) {
-          otherAudio.pause()
-        }
-      })
-      setCurrentPlayingId(fileId)
-    })
-
-    audio.addEventListener('pause', () => {
-      if (currentPlayingId === fileId) {
-        setCurrentPlayingId(null)
-      }
-    })
-
-    audio.addEventListener('ended', () => {
-      if (currentPlayingId === fileId) {
-        setCurrentPlayingId(null)
-      }
-    })
-  }
-
-  // 移除音频事件监听
-  const cleanupAudioListeners = (audio: HTMLAudioElement) => {
-    audio.removeEventListener('play', () => {})
-    audio.removeEventListener('pause', () => {})
-    audio.removeEventListener('ended', () => {})
-  }
-
-  const handlePlay = (fileId: number) => {
-    const currentAudio = audioRefs.current[fileId]
-    if (!currentAudio) return
-
-    // 如果点击的是当前正在播放的音乐
-    if (currentPlayingId === fileId) {
-      if (currentAudio.paused) {
-        currentAudio.play()
-      } else {
-        currentAudio.pause()
-      }
-      return
-    }
-
-    // 停止当前播放的音乐
-    if (currentPlayingId !== null && audioRefs.current[currentPlayingId]) {
-      audioRefs.current[currentPlayingId]?.pause()
-    }
-
-    // 播放新选择的音乐
-    currentAudio.play()
-  }
-
-  const setAudioRef = (element: HTMLAudioElement | null, fileId: number) => {
-    if (element) {
-      // 移除旧的事件监听器
-      const oldAudio = audioRefs.current[fileId]
-      if (oldAudio) {
-        cleanupAudioListeners(oldAudio)
-      }
-      
-      // 设置新的音频元素并添加事件监听器
-      audioRefs.current[fileId] = element
-      setupAudioListeners(element, fileId)
-    } else {
-      // 如果元素被移除，清理事件监听器
-      const oldAudio = audioRefs.current[fileId]
-      if (oldAudio) {
-        cleanupAudioListeners(oldAudio)
-      }
-      audioRefs.current[fileId] = null
-    }
-  }
-
-  const handleDownload = (url: string, fileName: string) => {
-    const link = document.createElement('a')
-    link.href = url
-    link.download = fileName
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
-
-  const fetchMusicList = async () => {
+  const fetchVideoList = async () => {
     try {
       setLoading(true)
       const token = sessionStorage.getItem('token')
@@ -135,7 +49,7 @@ export default function MusicPage() {
       }
 
       const response = await fetch(
-        `http://localhost:8080/api/cloud/musicList?userId=${user?.userId}&page=${currentPage}&pageSize=${pageSize}`,
+        `http://localhost:8080/api/cloud/videoList?userId=${user?.userId}&page=${currentPage}&pageSize=${pageSize}`,
         {
           method: 'GET',
           headers: {
@@ -149,16 +63,16 @@ export default function MusicPage() {
         throw new Error('Network response was not ok')
       }
 
-      const data: MusicResponse = await response.json()
+      const data: VideoResponse = await response.json()
 
       if (data.success) {
-        setMusicList(data.data.records)
+        setVideoList(data.data.records)
         setTotal(data.data.total)
       } else {
-        console.error('Failed to fetch music list:', data.message)
+        console.error('Failed to fetch video list:', data.message)
       }
     } catch (error) {
-      console.error('Failed to fetch music list:', error)
+      console.error('Failed to fetch video list:', error)
     } finally {
       setLoading(false)
     }
@@ -206,8 +120,17 @@ export default function MusicPage() {
     return pageNumbers
   }
 
+  const handleDownload = (url: string, fileName: string) => {
+    const link = document.createElement('a')
+    link.href = url
+    link.download = fileName
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   const handleDelete = async (fileId: number) => {
-    if (!confirm('确定要删除这个音乐文件吗？')) {
+    if (!confirm('确定要删除这个视频吗？')) {
       return
     }
 
@@ -220,13 +143,13 @@ export default function MusicPage() {
       })
 
       if (response.ok) {
-        // 重新获取音乐列表
-        fetchMusicList()
+        // 重新获取视频列表
+        fetchVideoList()
       } else {
         alert('删除失败，请重试')
       }
     } catch (error) {
-      console.error('删除音乐失败:', error)
+      console.error('删除视频失败:', error)
       alert('删除失败，请重试')
     }
   }
@@ -244,55 +167,85 @@ export default function MusicPage() {
               <span>返回云盘</span>
             </button>
             <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Music2 className="h-6 w-6 text-[#FF8200]" />
-              我的音乐
+              <Video className="h-6 w-6 text-[#FF8200]" />
+              我的视频
             </h1>
           </div>
 
           {loading ? (
             <div className="text-center py-8">加载中...</div>
-          ) : musicList.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">暂无音乐文件</div>
+          ) : videoList.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">暂无视频文件</div>
           ) : (
-            <div className="space-y-4">
-              {musicList.map((music) => (
-                <div
-                  key={music.fileId}
-                  className="flex items-center gap-4 p-4 hover:bg-gray-50 rounded-lg transition-colors"
-                >
-                  <button
-                    onClick={() => handlePlay(music.fileId)}
-                    className="w-10 h-10 bg-[#FF8200] bg-opacity-10 rounded-full flex items-center justify-center hover:bg-opacity-20"
-                  >
-                    {currentPlayingId === music.fileId ? (
-                      <Pause className="h-5 w-5 text-[#FF8200]" />
-                    ) : (
-                      <Play className="h-5 w-5 text-[#FF8200]" />
-                    )}
-                  </button>
-                  <div className="flex-1">
-                    <h3 className="font-medium">{music.fileName}</h3>
-                    <p className="text-sm text-gray-500">
-                      上传时间：{formatDate(music.createdAt)}
-                    </p>
+            <div className="space-y-6">
+              {/* 视频播放器 */}
+              {selectedVideo && (
+                <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black bg-opacity-50 p-4 rounded-lg z-50 w-[640px] shadow-2xl">
+                  <div className="flex justify-between items-center mb-2">
+                    <h2 className="text-lg font-medium text-white">{selectedVideo.fileName}</h2>
+                    <button 
+                      onClick={() => setSelectedVideo(null)}
+                      className="text-white hover:text-gray-300"
+                    >
+                      ✕
+                    </button>
                   </div>
-                  <audio
-                    ref={(el) => setAudioRef(el, music.fileId)}
-                    src={music.url}
+                  <video
+                    src={selectedVideo.url}
                     controls
-                    className="w-80"
+                    className="w-full rounded-lg"
+                    autoPlay
                   >
-                    您的浏览器不支持音频播放
-                  </audio>
-                  <button
-                    onClick={() => handleDelete(music.fileId)}
-                    className="px-3 py-1 text-sm text-red-500 hover:bg-red-50 rounded-full flex items-center gap-1"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    删除
-                  </button>
+                    您的浏览器不支持视频播放
+                  </video>
                 </div>
-              ))}
+              )}
+
+              {/* 添加遮罩层 */}
+              {selectedVideo && (
+                <div 
+                  className="fixed inset-0 bg-black bg-opacity-50 z-40"
+                  onClick={() => setSelectedVideo(null)}
+                />
+              )}
+
+              {/* 视频列表 */}
+              <div className="space-y-4">
+                {videoList.map((video) => (
+                  <div
+                    key={video.fileId}
+                    className="flex items-center gap-4 p-4 hover:bg-gray-50 rounded-lg transition-colors"
+                  >
+                    <Video className="h-6 w-6 text-[#FF8200]" />
+                    <div className="flex-1">
+                      <h3 
+                        className="font-medium hover:text-[#FF8200] cursor-pointer"
+                        onClick={() => setSelectedVideo(video)}
+                      >
+                        {video.fileName}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        上传时间：{formatDate(video.createdAt)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={() => handleDownload(video.url, video.fileName)}
+                        className="px-3 py-1 text-sm text-[#FF8200] hover:bg-orange-50 rounded-full"
+                      >
+                        下载
+                      </button>
+                      <button
+                        onClick={() => handleDelete(video.fileId)}
+                        className="px-3 py-1 text-sm text-red-500 hover:bg-red-50 rounded-full flex items-center gap-1"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        删除
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
 
               {/* 分页控件 */}
               {total > pageSize && (
