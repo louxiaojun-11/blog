@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, Home, Video, MessageCircle, User, LogOut } from 'lucide-react'
+import { Search, Home, Video, MessageCircle, User, LogOut, Mail } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useRef, useEffect } from 'react'
@@ -147,6 +147,9 @@ export default function Header() {
           >
             <MessageCircle className="h-6 w-6" />
           </button>
+          <Link href="/notifications" className="hover:text-[#FF8200]">
+            <Mail className="h-6 w-6" />
+          </Link>
           <div className="relative" ref={dropdownRef}>
             <button 
               onClick={() => setShowDropdown(!showDropdown)}
