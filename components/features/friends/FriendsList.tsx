@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { MessageCircle, UserMinus } from 'lucide-react'
+import { MessageCircle } from 'lucide-react'
 import { Friend } from '@/types/api'
 import { friendService, userService } from '@/services/api'
 import { useRouter } from 'next/navigation'
@@ -90,14 +90,9 @@ export default function FriendsList() {
                 )}
               </p>
             </div>
-            <div className="flex gap-2">
-              <button className="p-2 rounded-full hover:bg-gray-100">
-                <MessageCircle className="w-5 h-5 text-[#FF8200]" />
-              </button>
-              <button className="p-2 rounded-full hover:bg-gray-100">
-                <UserMinus className="w-5 h-5 text-gray-400" />
-              </button>
-            </div>
+            <button className="p-2 rounded-full hover:bg-gray-100">
+              <MessageCircle className="w-5 h-5 text-[#FF8200]" />
+            </button>
           </div>
         ))}
       </div>

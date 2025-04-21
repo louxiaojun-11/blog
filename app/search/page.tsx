@@ -8,10 +8,17 @@ import { blogService } from '@/services/api'
 import { BlogPost } from '@/types/api'
 import { Search } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface SearchResult {
   records: BlogPost[];
   total: number;
+}
+
+interface UserSearchResult {
+  relationId: number;
+  username: string;
+  avatar: string;
 }
 
 export default function SearchPage() {
@@ -21,12 +28,15 @@ export default function SearchPage() {
   
   const [loading, setLoading] = useState(true)
   const [searchResults, setSearchResults] = useState<SearchResult>({ records: [], total: 0 })
+  const [userResults, setUserResults] = useState<UserSearchResult[]>([])
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   
   useEffect(() => {
     if (type === 'blog' && content) {
       searchBlogs(content, currentPage, pageSize)
+    } else if (type === 'user' && content) {
+      searchUsers(content)
     }
   }, [content, type, currentPage, pageSize])
   
@@ -51,6 +61,28 @@ export default function SearchPage() {
       setLoading(false)
     }
   }
+
+  const searchUsers = async (searchContent: string) => {
+    try {
+      setLoading(true)
+      const response = await fetch(
+        `http://localhost:8080/api/relation/search?searchContent=${encodeURIComponent(searchContent)}`,
+        {
+          headers: {
+            'token': sessionStorage.getItem('token') || ''
+          }
+        }
+      )
+      const data = await response.json()
+      if (data.success) {
+        setUserResults(data.data)
+      }
+    } catch (error) {
+      console.error('搜索用户失败:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
   
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -61,54 +93,86 @@ export default function SearchPage() {
     setCurrentPage(1) // 重置到第一页
   }
   
-  // 如果不是博文搜索，显示空页面或重定向
-  if (type !== 'blog') {
-    return (
-      <MainLayout>
-        <div className="pt-4 px-4">
-          <h1 className="text-2xl font-bold mb-6">搜索结果</h1>
-          <div className="bg-white rounded-lg shadow p-6">
-            <p>正在显示用户搜索结果...</p>
-          </div>
-        </div>
-      </MainLayout>
-    )
-  }
-  
   return (
     <MainLayout>
       <div className="pt-4 px-4">
         <h1 className="text-2xl font-bold mb-6">
           搜索结果: "{content}"
-          <span className="text-gray-500 text-lg ml-2">共 {searchResults.total} 条结果</span>
+          {type === 'blog' && (
+            <span className="text-gray-500 text-lg ml-2">共 {searchResults.total} 条结果</span>
+          )}
+          {type === 'user' && (
+            <span className="text-gray-500 text-lg ml-2">共 {userResults.length} 位用户</span>
+          )}
         </h1>
         
-        {loading && searchResults.records.length === 0 ? (
+        {loading ? (
           <div className="bg-white rounded-lg shadow p-6 text-center">
             <p className="text-gray-500">正在搜索...</p>
           </div>
-        ) : searchResults.records.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-8 text-center">
-            <div className="mb-4 text-gray-400">
-              <Search className="h-12 w-12 mx-auto" />
+        ) : type === 'blog' ? (
+          searchResults.records.length === 0 ? (
+            <div className="bg-white rounded-lg shadow p-8 text-center">
+              <div className="mb-4 text-gray-400">
+                <Search className="h-12 w-12 mx-auto" />
+              </div>
+              <h2 className="text-xl font-medium mb-2">未找到相关博文</h2>
+              <p className="text-gray-500 mb-6">
+                没有找到与 "{content}" 相关的博文，请尝试其他关键词
+              </p>
+              <Link href="/" className="text-[#FF8200] hover:underline">
+                返回首页
+              </Link>
             </div>
-            <h2 className="text-xl font-medium mb-2">未找到相关博文</h2>
-            <p className="text-gray-500 mb-6">
-              没有找到与 "{content}" 相关的博文，请尝试其他关键词
-            </p>
-            <Link href="/" className="text-[#FF8200] hover:underline">
-              返回首页
-            </Link>
-          </div>
+          ) : (
+            <BlogList 
+              blogList={searchResults.records}
+              total={searchResults.total}
+              currentPage={currentPage}
+              currentPageSize={pageSize}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+            />
+          )
         ) : (
-          <BlogList 
-            blogList={searchResults.records}
-            total={searchResults.total}
-            currentPage={currentPage}
-            currentPageSize={pageSize}
-            onPageChange={handlePageChange}
-            onPageSizeChange={handlePageSizeChange}
-          />
+          userResults.length === 0 ? (
+            <div className="bg-white rounded-lg shadow p-8 text-center">
+              <div className="mb-4 text-gray-400">
+                <Search className="h-12 w-12 mx-auto" />
+              </div>
+              <h2 className="text-xl font-medium mb-2">未找到相关用户</h2>
+              <p className="text-gray-500 mb-6">
+                没有找到与 "{content}" 相关的用户，请尝试其他关键词
+              </p>
+              <Link href="/" className="text-[#FF8200] hover:underline">
+                返回首页
+              </Link>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
+                {userResults.map((user) => (
+                  <Link 
+                    key={user.relationId}
+                    href={`/relation/profile?userId=${user.relationId}`}
+                    className="flex items-center gap-4 p-4 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <Image
+                      src={user.avatar}
+                      alt={user.username}
+                      width={64}
+                      height={64}
+                      className="rounded-full"
+                    />
+                    <div>
+                      <h3 className="font-medium text-lg">{user.username}</h3>
+                      <p className="text-sm text-gray-500">ID: {user.relationId}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )
         )}
       </div>
     </MainLayout>
