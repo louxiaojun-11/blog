@@ -503,10 +503,6 @@ export default function BlogList({
                   <span className="text-gray-400">{blog.createdAt}</span>
                 </div>
                 <div className="flex gap-6 text-gray-500">
-                  <span className="flex items-center gap-2">
-                    <Eye className="h-5 w-5" />
-                    <span>{blog.views || 0}</span>
-                  </span>
                   <button
                     onClick={() => handleLikeClick(blog.id)}
                     disabled={liking === blog.id}

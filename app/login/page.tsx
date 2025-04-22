@@ -36,10 +36,10 @@ export default function LoginPage() {
       let response;
       if (isAdminLogin) {
         response = await adminService.login(account, password)
-        console.log('Admin login response:', response) // 添加调试日志
+        console.log('Admin login response:', response)
         if (response.success) {
           const { data } = response
-          console.log('Admin data:', data) // 添加调试日志
+          console.log('Admin data:', data)
           adminLogin({
             adminId: data.adminId,
             account: data.account,
@@ -47,7 +47,7 @@ export default function LoginPage() {
             avatar: data.avatar
           }, data.token)
           router.push('/admin/dashboard')
-          return // 添加return确保函数在此处结束
+          return
         }
       } else {
         response = await authService.login(account, password)
@@ -60,7 +60,7 @@ export default function LoginPage() {
             avatar: data.avatar
           }, data.token)
           router.push('/')
-          return // 添加return确保函数在此处结束
+          return
         }
       }
       
@@ -145,7 +145,6 @@ export default function LoginPage() {
 
       <div className="max-w-md w-full space-y-6">
         <h1 className="text-4xl font-bold text-gray-700 italic text-center mb-8">
-          
           写下你想写的一切吧
           <br></br>
         </h1>
@@ -158,68 +157,157 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="text-red-500 text-center text-sm">{error}</div>
+            <div className="text-red-500 text-center text-sm mt-4">{error}</div>
           )}
 
-          <form className="mt-8 space-y-6" onSubmit={handleLogin}>
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="account" className="sr-only">账号</label>
-                <input
-                  id="account"
-                  name="account"
-                  type="text"
-                  required
-                  value={account}
-                  onChange={(e) => setAccount(e.target.value)}
-                  className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#FF8200] focus:border-[#FF8200]"
-                  placeholder="账号"
-                />
+          {isLogin ? (
+            <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="account" className="sr-only">账号</label>
+                  <input
+                    id="account"
+                    name="account"
+                    type="text"
+                    required
+                    value={account}
+                    onChange={(e) => setAccount(e.target.value)}
+                    className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#FF8200] focus:border-[#FF8200]"
+                    placeholder="账号"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="password" className="sr-only">密码</label>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#FF8200] focus:border-[#FF8200]"
+                    placeholder="密码"
+                  />
+                </div>
               </div>
-              <div>
-                <label htmlFor="password" className="sr-only">密码</label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#FF8200] focus:border-[#FF8200]"
-                  placeholder="密码"
-                />
+
+              <div className="flex justify-between">
+                <button
+                  type="button"
+                  onClick={() => setIsAdminLogin(!isAdminLogin)}
+                  className="text-sm text-[#FF8200] hover:text-[#ff9933]"
+                >
+                  {isAdminLogin ? '切换到用户登录' : '切换到管理员登录'}
+                </button>
+                <button
+                  type="button"
+                  onClick={switchMode}
+                  className="text-sm text-[#FF8200] hover:text-[#ff9933]"
+                >
+                  还没有账号？立即注册
+                </button>
               </div>
-            </div>
 
-            <div className="flex justify-between">
-              <button
-                type="button"
-                onClick={() => setIsAdminLogin(!isAdminLogin)}
-                className="text-sm text-[#FF8200] hover:text-[#ff9933]"
-              >
-                {isAdminLogin ? '切换到用户登录' : '切换到管理员登录'}
-              </button>
-            </div>
+              <div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#FF8200] hover:bg-[#ff9933] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FF8200] disabled:opacity-50"
+                >
+                  {loading ? '登录中...' : '登录'}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form className="mt-8 space-y-6" onSubmit={handleRegister}>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="username" className="sr-only">用户名</label>
+                  <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    required
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#FF8200] focus:border-[#FF8200]"
+                    placeholder="用户名"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="register-account" className="sr-only">账号</label>
+                  <input
+                    id="register-account"
+                    name="account"
+                    type="text"
+                    required
+                    value={account}
+                    onChange={(e) => setAccount(e.target.value)}
+                    className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#FF8200] focus:border-[#FF8200]"
+                    placeholder="账号"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="register-password" className="sr-only">密码</label>
+                  <input
+                    id="register-password"
+                    name="password"
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#FF8200] focus:border-[#FF8200]"
+                    placeholder="密码"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="confirm-password" className="sr-only">确认密码</label>
+                  <input
+                    id="confirm-password"
+                    name="confirmPassword"
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#FF8200] focus:border-[#FF8200]"
+                    placeholder="确认密码"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="introduce" className="sr-only">个人简介</label>
+                  <textarea
+                    id="introduce"
+                    name="introduce"
+                    value={introduce}
+                    onChange={(e) => setIntroduce(e.target.value)}
+                    className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-[#FF8200] focus:border-[#FF8200]"
+                    placeholder="个人简介（选填）"
+                    rows={3}
+                  />
+                </div>
+              </div>
 
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-[#FF8200] hover:bg-[#ff9933] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FF8200] disabled:opacity-50"
-              >
-                {loading ? '登录中...' : isAdminLogin ? '管理员登录' : '登录'}
-              </button>
-            </div>
-          </form>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={switchMode}
+                  className="text-sm text-[#FF8200] hover:text-[#ff9933]"
+                >
+                  已有账号？立即登录
+                </button>
+              </div>
 
-          <div className="text-center">
-            <button
-              onClick={switchMode}
-              className="text-[#FF8200] hover:text-[#ff9933]"
-            >
-              {isLogin ? '没有账号？点击注册' : '已有账号？点击登录'}
-            </button>
-          </div>
+              <div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#FF8200] hover:bg-[#ff9933] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FF8200] disabled:opacity-50"
+                >
+                  {loading ? '注册中...' : '注册'}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </div>
