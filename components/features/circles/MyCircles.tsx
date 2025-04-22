@@ -200,7 +200,7 @@ export default function MyCircles() {
           <div className="bg-green-100 rounded-full p-1">
             <Check className="w-4 h-4 text-green-600" />
           </div>
-          <span className="text-green-800">创建成功！</span>
+          <span className="text-green-800">提交创建圈子请求成功，审核结果请关注通知中心！</span>
         </div>
       )}
 

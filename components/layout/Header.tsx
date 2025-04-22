@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, Home, Video, MessageCircle, User, LogOut, Mail } from 'lucide-react'
+import { Search, Home, MessageCircle, User, LogOut, Mail } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useRef, useEffect } from 'react'
@@ -131,9 +131,6 @@ export default function Header() {
         <nav className="flex items-center gap-6">
           <Link href="/" className="hover:text-[#FF8200]">
             <Home className="h-6 w-6" />
-          </Link>
-          <Link href="/video" className="hover:text-[#FF8200]">
-            <Video className="h-6 w-6" />
           </Link>
           <button 
             onClick={() => setShowChat(true)}
