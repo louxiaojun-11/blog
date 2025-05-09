@@ -44,7 +44,6 @@ export default function AdminLayout({
     { icon: Megaphone, label: '公告管理', href: '/admin/announcements' },
     { icon: AlertTriangle, label: '敏感词管理', href: '/admin/sensitive-words' },
     { icon: LayoutDashboard, label: '控制台', href: '/admin/dashboard' },
-    { icon: Settings, label: '系统设置', href: '/admin/settings' },
   ]
 
   return (
